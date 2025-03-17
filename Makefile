@@ -18,4 +18,7 @@ $(TARGET): $(OBJECTS)
 		$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET)
 
 clean:
-	rm -f $(OBJ_DIR)/*.o $(TARGET)
+	rm -f $(OBJ_DIR)/*.o
+
+fclean: clean
+	rm -rf $(TARGET)

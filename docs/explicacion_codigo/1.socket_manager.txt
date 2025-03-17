@@ -5,6 +5,16 @@
 #include <cstring> // Para memset
 #include <cstdlib> // Para exit()
 
+						***
+
+#include "socket_manager.h": Incluye el archivo de encabezado socket_manager.h, que define la clase SocketManager.
+#include <iostream>: Incluye la biblioteca de entrada/salida estándar para usar std::cout y std::cerr.
+#include <cstring>: Incluye la biblioteca de cadenas de caracteres para usar memset.
+#include <cstdlib>: Incluye la biblioteca estándar de C para usar exit.
+
+***************************************************
+
+#################   SocketManager    #################
 SocketManager::SocketManager(int port) {
     // 1. Crear el socket del servidor
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -15,10 +25,7 @@ SocketManager::SocketManager(int port) {
 
 						***
 
-#include "socket_manager.h": Incluye el archivo de encabezado socket_manager.h, que define la clase SocketManager.
-#include <iostream>: Incluye la biblioteca de entrada/salida estándar para usar std::cout y std::cerr.
-#include <cstring>: Incluye la biblioteca de cadenas de caracteres para usar memset.
-#include <cstdlib>: Incluye la biblioteca estándar de C para usar exit.
+
 SocketManager::SocketManager(int port): Constructor de la clase SocketManager. Toma el número de puerto como argumento.
 server_fd = socket(AF_INET, SOCK_STREAM, 0): Crea un socket del servidor usando la función socket.
 AF_INET: Indica que se usará IPv4.
@@ -141,6 +148,8 @@ close(server_fd): Cierra el socket del servidor.
 
 ***************************************************
 
+#################   run    #################
+
 void SocketManager::run() {
     epoll_event events[MAX_EVENTS];
     while (true) {
@@ -168,6 +177,8 @@ while (true): Bucle infinito del servidor.
 **`int num_events = ep
 
 ***************************************************
+
+#################   acceptConnection    #################
 
 void SocketManager::acceptConnection() {
     sockaddr_in client_address;
@@ -234,57 +245,130 @@ std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;: Imprime un 
 
 ***************************************************
 
+#################   handleClientEvent    #################
+
 void SocketManager::handleClientEvent(int client_fd) {
-    // Implementar la lógica para recibir y enviar datos a los clientes
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
 
+    std::cout << "bytes_received: " << bytes_received << std::endl;
+    std::cout << "buffer: " << buffer << std::endl;
+
 					***
 
-void SocketManager::handleClientEvent(int client_fd): Esta función se llama cuando epoll detecta un evento EPOLLIN en el socket de un cliente, lo que indica que hay datos disponibles para leer.
-char buffer[1024];: Declara un buffer para almacenar los datos recibidos del cliente.
+void SocketManager::handleClientEvent(int client_fd): Define la función que maneja los eventos de los clientes conectados.
+char buffer[1024];: Declara un buffer de 1024 bytes para almacenar los datos recibidos del cliente.
 memset(buffer, 0, sizeof(buffer));: Inicializa el buffer con ceros.
 int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);: Recibe datos del cliente y los almacena en el buffer.
+std::cout << "bytes_received: " << bytes_received << std::endl;: Imprime el número de bytes recibidos para depuración.
+std::cout << "buffer: " << buffer << std::endl;: Imprime el contenido del buffer para depuración.
 
 ***************************************************
 
-if (bytes_received <= 0) {
-        // El cliente se ha desconectado o ha ocurrido un error
-        std::cout << "Cliente desconectado: " << client_fd << std::endl;
+ if (bytes_received == 0) {
+        // Cliente envió EOF (Ctrl+D)
+        std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
+        if (partial_messages.find(client_fd) != partial_messages.end()) {
+            std::cout << "Datos recibidos del cliente " << client_fd << ": " << partial_messages[client_fd];
+            broadcastMessage(partial_messages[client_fd], client_fd); // Difundir mensaje parcial
+            partial_messages.erase(client_fd);
+        } else {
+            // No hay mensajes parciales, desconectar
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+            close(client_fd);
+            client_addresses.erase(client_fd);
+        }
+    }
+
+					***
+
+if (bytes_received == 0): Verifica si el cliente envió un EOF (Ctrl+D).
+std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;: Imprime un mensaje indicando que el cliente envió un EOF.
+if (partial_messages.find(client_fd) != partial_messages.end()): Verifica si hay mensajes parciales almacenados para este cliente.
+std::cout << "Datos recibidos del cliente " << client_fd << ": " << partial_messages[client_fd];: Imprime los datos parciales recibidos del cliente.
+broadcastMessage(partial_messages[client_fd], client_fd);: Difunde el mensaje parcial a todos los demás clientes.
+partial_messages.erase(client_fd);: Elimina el mensaje parcial del mapa.
+else: Si no hay mensajes parciales, desconecta al cliente.
+epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);: Elimina el socket del cliente de epoll.
+close(client_fd);: Cierra el socket del cliente.
+client_addresses.erase(client_fd);: Elimina la dirección del cliente del mapa.
+
+***************************************************
+
+else if (bytes_received < 0) {
+        std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
         close(client_fd);
         client_addresses.erase(client_fd);
+        partial_messages.erase(client_fd);
     }
 
 					***
 
-if (bytes_received <= 0): Verifica si el cliente se ha desconectado o si hubo un error al recibir datos.
-std::cout << "Cliente desconectado: " << client_fd << std::endl;: Imprime un mensaje indicando que el cliente se ha desconectado.
+else if (bytes_received < 0): Verifica si hubo un error en la llamada a recv().
+std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;: Imprime un mensaje de error detallado.
 epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);: Elimina el socket del cliente de epoll.
 close(client_fd);: Cierra el socket del cliente.
-client_addresses.erase(client_fd);: Elimina la dirección del cliente del mapa client_addresses.
+client_addresses.erase(client_fd);: Elimina la dirección del cliente del mapa.
+partial_messages.erase(client_fd);: Elimina cualquier mensaje parcial almacenado.
 
 ***************************************************
 
-    else {
-        // Procesar los datos recibidos
-        // Agregar un salto de línea al final del buffer
-        if (buffer[bytes_received - 1] != '\n') {
-            buffer[bytes_received] = '\n';
-            buffer[bytes_received + 1] = '\0'; // Asegurar que la cadena esté terminada
-            bytes_received++;
+ else {
+        std::string received_data(buffer, bytes_received);
+        std::cout << "received_data: " << received_data << std::endl;
+
+        if (partial_messages.find(client_fd) != partial_messages.end()) {
+            std::cout << "partial_messages: " << partial_messages[client_fd] << std::endl;
+            received_data = partial_messages[client_fd] + received_data;
+            partial_messages.erase(client_fd);
         }
-        std::cout << "Datos recibidos del cliente " << client_fd << ": " << buffer;
-        // Enviar una respuesta al cliente (ejemplo)
-        send(client_fd, "Mensaje recibido.\n", 18, 0);
+
+        size_t newline_pos = received_data.find('\n');
+        std::cout << "newline_pos: " << newline_pos << std::endl;
+
+        if (newline_pos != std::string::npos) {
+            std::cout << "Datos recibidos del cliente " << client_fd << ": " << received_data;
+            broadcastMessage(received_data, client_fd); // Difundir mensaje completo
+        } else {
+            partial_messages[client_fd] = received_data;
+        }
     }
+}
 
 					***
 
 else: Si se recibieron datos correctamente.
-if (buffer[bytes_received - 1] != '\n') esta instruccion añade un salto de linea al final de los mensajes.
-std::cout << "Datos recibidos del cliente " << client_fd << ": " << buffer << std::endl;: Imprime los datos recibidos del cliente.
-send(client_fd, "Mensaje recibido.\n", 18, 0);: Envía una respuesta al cliente.
+std::string received_data(buffer, bytes_received);: Convierte los datos recibidos a una cadena de caracteres.
+std::cout << "received_data: " << received_data << std::endl;: Imprime los datos recibidos para depuración.
+if (partial_messages.find(client_fd) != partial_messages.end()): Verifica si hay mensajes parciales almacenados para este cliente.
+std::cout << "partial_messages: " << partial_messages[client_fd] << std::endl;: Imprime los datos parciales almacenados.
+received_data = partial_messages[client_fd] + received_data;: Concatena los mensajes parciales.
+partial_messages.erase(client_fd);: Elimina el mensaje parcial del mapa.
+size_t newline_pos = received_data.find('\n');: Busca la posición del salto de línea (\n).
+std::cout << "newline_pos: " << newline_pos << std::endl;: Imprime la posición del salto de línea para depuración.
+if (newline_pos != std::string::npos): Verifica si se encontró un salto de línea.
+std::cout << "Datos recibidos del cliente " << client_fd << ": " << received_data;: Imprime el mensaje completo recibido.
+broadcastMessage(received_data, client_fd);: Difunde el mensaje completo a todos los demás clientes.
+else: Si no se encontró un salto de línea, almacena el mensaje parcial.
+partial_messages[client_fd] = received_data;: Almacena el mensaje parcial en el mapa.
+
+***************************************************
+
+#################   broadcastMessage    #################
+
+void SocketManager::broadcastMessage(const std::string& message, int sender_fd) {
+    for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it) {
+        int client_fd = it->first;
+        if (client_fd != sender_fd) {
+            send(client_fd, message.c_str(), message.length(), 0);
+        }
+    }
+}
+					***
+
+void SocketManager::broadcastMessage(const std::string& message, int sender_fd): Define la función que difunde un mensaje a todos los clientes excepto al remitente.
+**`for (std::map<int, sockaddr_in>::iterator it = client_addresses.
 
 ***************************************************

@@ -4,8 +4,8 @@
 
 int main(int argc, char* argv[])
 {
-	if (argc != 2) {
-        std::cerr << "Uso: " << argv[0] << " <puerto>" << std::endl;
+	if (argc != 3) {
+        std::cerr << "Uso: " << argv[0] << " <puerto> <contraseña>" << std::endl;
         return 1;
     }
 	int port = atoi(argv[1]);
@@ -13,7 +13,10 @@ int main(int argc, char* argv[])
         std::cerr << "Puerto invalido. Debe estar entre 1 y 65535." << std::endl;
         return 1;
     }
-	SocketManager server(port);
+
+	std::string password = argv[2];
+
+	SocketManager server(port, password);
 	server.run();
 	return (0);
 }

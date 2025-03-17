@@ -3,13 +3,19 @@
 #include <cstring> // para memset
 #include <cstdlib> // para exit
 
-SocketManager::SocketManager(int port)
+SocketManager::SocketManager(int port, const std::string& password) : server_password(password)
 {
 	// 1.Crear el socket del servidor
 	server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_fd == -1)
 	{
 		std::cerr << "Error al crear el socket del servidor." << std::endl;
+		exit(1);
+	}
+
+	int reuse = 1;
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+		std::cerr << "Error al configurar SO_REUSEADDR." << std::endl;
 		exit(1);
 	}
 
@@ -21,11 +27,6 @@ SocketManager::SocketManager(int port)
 	server_address.sin_port = htons(port);
 
 	// 3.Asociar el socket a la direccion del servidor
-	int reuse = 1;
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
-		std::cerr << "Error al configurar SO_REUSEADDR." << std::endl;
-		exit(1);
-	}
 	if (bind(server_fd, (sockaddr*)&server_address, sizeof(server_address)) == -1)
 	{
 		std::cerr << "Error al asociar el socket a la direccion." << std::endl;
@@ -118,6 +119,10 @@ void SocketManager::acceptConnection()
 
 	client_addresses[client_fd] = client_address;
 	std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;
+
+	// Enviar mensaje de bienvenida e instrucciones de contraseña
+	std::string welcome_message = "Bienvenido al servidor IRC.\nPor favor, introduzca la contraseña usando el comando PASS <contraseña>.\n";
+	send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
 }
 
 #include <cstring> // Para strerror
@@ -163,6 +168,33 @@ void SocketManager::handleClientEvent(int client_fd) { //problema persistente co
         std::string received_data(buffer, bytes_received);
         //std::cout << "received_data: " << received_data << std::endl;
 
+		// Manejo de la contraseña
+		if (received_data.find("PASS ") == 0)
+		{
+			std::string client_password = received_data.substr(5, received_data.find('\n') - 5);
+			if (client_password == server_password)
+			{
+				send(client_fd, "Contraseña correcta. Bienvenido al servidor IRC.\n", 50, 0);
+				nicknames[client_fd] = "Invitado";
+				authenticated_clients.insert(client_fd);
+			}
+			else
+			{
+				send(client_fd, "Contraseña incorrecta. Intentalo de nuevo.\n", 38, 0);
+				close(client_fd);
+				client_addresses.erase(client_fd);
+			}
+			return;
+		}
+
+		// Verificar si el cliente esta autenticado
+		if (authenticated_clients.find(client_fd) == authenticated_clients.end())
+		{
+			send(client_fd, "Por favor autenticate primero.\n", 31, 0);
+			close(client_fd);
+			client_addresses.erase(client_fd);
+			return;
+		}
         if (partial_messages.find(client_fd) != partial_messages.end())
 		{
             //std::cout << "partial_messages: " << partial_messages[client_fd] << std::endl;
@@ -186,12 +218,18 @@ void SocketManager::handleClientEvent(int client_fd) { //problema persistente co
 
 void SocketManager::broadcastMessage(const std::string& message, int sender_fd)
 {
+	sockaddr_in sender_addr = client_addresses[sender_fd];
+	char ip_address[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(sender_addr.sin_addr), ip_address, INET_ADDRSTRLEN);
+
+	std::string formatted_message = "[" +std::string(ip_address) + "]: " + message;
+
 	for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it)
 	{
 		int client_fd = it->first;
-		if (client_fd != sender_fd)
+		if (client_fd != sender_fd && authenticated_clients.find(client_fd) != authenticated_clients.end())
 		{
-			send(client_fd, message.c_str(), message.length(), 0);
+			send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
 		}
 	}
 }
