@@ -1,0 +1,6 @@
+Implementación de los Comandos IRC
+
+Comandos Básicos:
+	Implementar comandos como NICK, USER, PRIVMSG, JOIN, PART, QUIT.
+Comandos de Operador:
+	Implementar comandos como KICK, INVITE, TOPIC, MODE.

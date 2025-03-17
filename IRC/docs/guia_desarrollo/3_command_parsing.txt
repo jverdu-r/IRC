@@ -1,0 +1,7 @@
+Recepción de Datos:
+	Recibir datos de los clientes en un buffer.
+Análisis de Comandos:
+	Analizar el buffer para extraer comandos y argumentos.
+	Usar funciones como strtok() o std::string::find() para dividir la cadena en tokens.
+Ejecución de Comandos:
+	Llamar a las funciones correspondientes en los módulos de gestión de usuarios, canales y comandos.

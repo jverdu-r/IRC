@@ -1,0 +1,10 @@
+despues de hacer make y ver el mensaje de que el servidor esta escuchando
+desde otra terminal lanzamos el comando "nc localhost 6667" 
+(que es el puerto en que tenemos configurado el servidor para las pruebas).
+
+A partir de aqui podemos enviar mensajes al servidor los cuales apreceran
+en la primera terminal confirmandonoslo en la segunda con un mensaje que 
+usamos para las pruebas.
+
+Para salir del canal como usuario necesitamos usar "ctrl+c" en la segunda terminal
+asi como usar "ctrl+c" en la primera para cerrar el servidor; mas tarde ya crearemos comandos para ambas cosas.

@@ -1,0 +1,71 @@
+Implementación del Módulo de Sockets (socket_manager.cpp/.h)
+	Creación del Socket del Servidor:
+		Usar socket(AF_INET, SOCK_STREAM, 0) para crear un socket TCP.
+		Usar bind() para asociar el socket a una dirección IP y un puerto.
+		Usar listen() para poner el socket en modo de escucha.
+	Configuración de epoll:
+		Usar epoll_create1(0) para crear una instancia de epoll.
+		Crear una estructura epoll_event para el socket del servidor y agregarla a epoll usando epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event).
+	Aceptación de Conexiones y Manejo de Eventos:
+		Usar epoll_wait() para esperar eventos en los sockets.
+		Iterar sobre los eventos devueltos por epoll_wait().
+		Si el evento es para el socket del servidor, aceptar la conexión usando accept().
+		Configurar el socket del cliente como no bloqueante usando fcntl(client_fd, F_SETFL, O_NONBLOCK).
+		Agregar el socket del cliente a epoll usando epoll_ctl().
+	Comunicación con los Clientes:
+		Si el evento es para un socket de cliente, usar recv() para recibir datos.
+		Usar send() para enviar datos.
+		Manejar errores de recv() y send() (por ejemplo, desconexiones).
+
+ejemplo de socket_manager.h:
+
+#ifndef SOCKET_MANAGER_H
+#define SOCKET_MANAGER_H
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <map>
+
+class SocketManager {
+public:
+	SocketManager(int port);
+	~SocketManager();
+	void run();
+private:
+	int server_fd;
+	int epoll_fd;
+	std::map<int, sockaddr_in> client_addresses;
+	void acceptConnection();
+	void handleClientEvent(int client_fd);
+};
+
+#endif
+
+ejemplo de socket_manager.cpp:
+
+#include "socket_manager.h"
+#include <iostream>
+
+SocketManager::SocketManager(int port) {
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    // ... configuracion de bind y listen ...
+    epoll_fd = epoll_create1(0);
+    // ... configuracion de epoll ...
+}
+
+void SocketManager::run() {
+    epoll_event events[MAX_EVENTS];
+    while (true) {
+        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        for (int i = 0; i < num_events; ++i) {
+            if (events[i].data.fd == server_fd) {
+                acceptConnection();
+            } else {
+                handleClientEvent(events[i].data.fd);
+            }
+        }
+    }
+}

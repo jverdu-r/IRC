@@ -1,0 +1,290 @@
+***************************************************
+
+#include "socket_manager.h"
+#include <iostream>
+#include <cstring> // Para memset
+#include <cstdlib> // Para exit()
+
+SocketManager::SocketManager(int port) {
+    // 1. Crear el socket del servidor
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        std::cerr << "Error al crear el socket del servidor." << std::endl;
+        exit(1);
+    }
+
+						***
+
+#include "socket_manager.h": Incluye el archivo de encabezado socket_manager.h, que define la clase SocketManager.
+#include <iostream>: Incluye la biblioteca de entrada/salida estándar para usar std::cout y std::cerr.
+#include <cstring>: Incluye la biblioteca de cadenas de caracteres para usar memset.
+#include <cstdlib>: Incluye la biblioteca estándar de C para usar exit.
+SocketManager::SocketManager(int port): Constructor de la clase SocketManager. Toma el número de puerto como argumento.
+server_fd = socket(AF_INET, SOCK_STREAM, 0): Crea un socket del servidor usando la función socket.
+AF_INET: Indica que se usará IPv4.
+SOCK_STREAM: Indica que se usará TCP.
+0: Indica que se usará el protocolo predeterminado.
+if (server_fd == -1): Verifica si hubo un error al crear el socket.
+std::cerr << "Error al crear el socket del servidor." << std::endl;: Imprime un mensaje de error en la salida de error estándar.
+exit(1): Termina el programa con un código de error.
+
+***************************************************
+
+// 2. Configurar la dirección del servidor
+    sockaddr_in server_address;
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(port);
+
+						***
+
+sockaddr_in server_address;: Declara una estructura sockaddr_in para almacenar la dirección del servidor.
+memset(&server_address, 0, sizeof(server_address)): Inicializa la estructura server_address con ceros.
+server_address.sin_family = AF_INET;: Establece la familia de direcciones a IPv4.
+server_address.sin_addr.s_addr = INADDR_ANY;: Establece la dirección IP del servidor para aceptar conexiones en cualquier interfaz.
+server_address.sin_port = htons(port);: Establece el número de puerto del servidor. htons convierte el número de puerto a formato de red.
+
+***************************************************
+
+// 3. Asociar el socket a la dirección del servidor
+	int reuse = 1;
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+		std::cerr << "Error al configurar SO_REUSEADDR." << std::endl;
+		exit(1);
+	}
+    if (bind(server_fd, (sockaddr*)&server_address, sizeof(server_address)) == -1) {
+        std::cerr << "Error al asociar el socket a la dirección." << std::endl;
+        exit(1);
+    }
+
+						***
+if (setsockopt(...) esta linea permite usar un socket que este en estado TIME_WAIT. es util para reiniciar el servidor rapidamente. 
+bind(server_fd, (sockaddr*)&server_address, sizeof(server_address)): Asocia el socket del servidor a la dirección del servidor.
+if (bind(...) == -1): Verifica si hubo un error al asociar el socket.
+std::cerr << "Error al asociar el socket a la dirección." << std::endl;: Imprime un mensaje de error.
+exit(1): Termina el programa.
+
+***************************************************
+
+   // 4. Poner el socket en modo de escucha
+    if (listen(server_fd, 5) == -1) {
+        std::cerr << "Error al poner el socket en modo de escucha." << std::endl;
+        exit(1);
+    }
+
+						***
+
+listen(server_fd, 5): Pone el socket del servidor en modo de escucha, permitiendo hasta 5 conexiones en cola.
+if (listen(...) == -1): Verifica si hubo un error.
+std::cerr << "Error al poner el socket en modo de escucha." << std::endl;: Imprime un mensaje de error.
+exit(1): Termina el programa.
+
+***************************************************
+
+ // 5. Crear la instancia de epoll
+    epoll_fd = epoll_create1(0);
+    if (epoll_fd == -1) {
+        std::cerr << "Error al crear la instancia de epoll." << std::endl;
+        exit(1);
+    }
+
+						***
+
+epoll_fd = epoll_create1(0): Crea una instancia de epoll.
+if (epoll_fd == -1): Verifica si hubo un error.
+std::cerr << "Error al crear la instancia de epoll." << std::endl;: Imprime un mensaje de error.
+exit(1): Termina el programa.
+
+***************************************************
+
+ // 6. Agregar el socket del servidor a epoll
+    epoll_event event;
+    event.events = EPOLLIN;
+    event.data.fd = server_fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) == -1) {
+        std::cerr << "Error al agregar el socket del servidor a epoll." << std::endl;
+        exit(1);
+    }
+
+						***
+
+epoll_event event;: Declara una estructura epoll_event para configurar el evento de epoll.
+event.events = EPOLLIN;: Establece el evento a EPOLLIN, indicando que se debe esperar a que haya datos disponibles para leer.
+event.data.fd = server_fd;: Establece el descriptor de archivo del socket del servidor.
+epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event): Agrega el socket del servidor a epoll.
+if (epoll_ctl(...) == -1): Verifica si hubo un error.
+std::cerr << "Error al agregar el socket del servidor a epoll." << std::endl;: Imprime un mensaje de error.
+exit(1): Termina el programa.
+
+***************************************************
+
+    std::cout << "Servidor escuchando en el puerto " << port << "..." << std::endl;
+}
+
+						***
+
+std::cout << "Servidor escuchando en el puerto " << port << "..." << std::endl;: Imprime un mensaje indicando que el servidor está escuchando en el puerto especificado.
+
+***************************************************
+
+SocketManager::~SocketManager() {
+    close(epoll_fd);
+    close(server_fd);
+}
+
+						***
+
+SocketManager::~SocketManager(): Destructor de la clase SocketManager.
+close(epoll_fd): Cierra la instancia de epoll.
+close(server_fd): Cierra el socket del servidor.
+
+***************************************************
+
+void SocketManager::run() {
+    epoll_event events[MAX_EVENTS];
+    while (true) {
+        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        if (num_events == -1) {
+            std::cerr << "Error en epoll_wait." << std::endl;
+            continue;
+        }
+
+        for (int i = 0; i < num_events; ++i) {
+            if (events[i].data.fd == server_fd) {
+                acceptConnection();
+            } else {
+                handleClientEvent(events[i].data.fd);
+            }
+        }
+    }
+}
+
+						***
+
+void SocketManager::run(): Función principal del bucle del servidor.
+epoll_event events[MAX_EVENTS];: Declara un array de estructuras epoll_event para almacenar los eventos devueltos por epoll_wait.
+while (true): Bucle infinito del servidor.
+**`int num_events = ep
+
+***************************************************
+
+void SocketManager::acceptConnection() {
+    sockaddr_in client_address;
+    socklen_t client_address_len = sizeof(client_address);
+    int client_fd = accept(server_fd, (sockaddr*)&client_address, &client_address_len);
+    if (client_fd == -1) {
+        std::cerr << "Error al aceptar la conexión." << std::endl;
+        return;
+    }
+
+						***
+
+void SocketManager::acceptConnection(): Esta función se llama cuando epoll detecta un evento EPOLLIN en el socket del servidor, lo que indica que hay una nueva conexión entrante.
+sockaddr_in client_address;: Declara una estructura sockaddr_in para almacenar la dirección del cliente.
+socklen_t client_address_len = sizeof(client_address);: Obtiene la longitud de la estructura client_address.
+int client_fd = accept(server_fd, (sockaddr*)&client_address, &client_address_len);: Acepta la conexión entrante y obtiene el descriptor de archivo del socket del cliente (client_fd).
+if (client_fd == -1): Verifica si hubo un error al aceptar la conexión.
+std::cerr << "Error al aceptar la conexión." << std::endl;: Imprime un mensaje de error en la salida de error estándar.
+return;: Sale de la función si hubo un error.
+
+***************************************************
+
+// Configurar el socket del cliente como no bloqueante
+    fcntl(client_fd, F_SETFL, O_NONBLOCK);
+
+						***
+
+fcntl(client_fd, F_SETFL, O_NONBLOCK);: Configura el socket del cliente como no bloqueante. Esto es importante para que las operaciones de lectura y escritura no bloqueen el bucle del servidor.
+
+***************************************************
+
+// Agregar el socket del cliente a epoll
+    epoll_event event;
+    event.events = EPOLLIN;
+    event.data.fd = client_fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event) == -1) {
+        std::cerr << "Error al agregar el socket del cliente a epoll." << std::endl;
+        close(client_fd);
+        return;
+    }
+
+						***
+
+epoll_event event;: Declara una estructura epoll_event para configurar el evento de epoll para el socket del cliente.
+event.events = EPOLLIN;: Establece el evento a EPOLLIN, indicando que se debe esperar a que haya datos disponibles para leer.
+event.data.fd = client_fd;: Establece el descriptor de archivo del socket del cliente.
+epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event): Agrega el socket del cliente a epoll.
+if (epoll_ctl(...) == -1): Verifica si hubo un error al agregar el socket del cliente a epoll.
+std::cerr << "Error al agregar el socket del cliente a epoll." << std::endl;: Imprime un mensaje de error.
+close(client_fd);: Cierra el socket del cliente si hubo un error.
+return;: Sale de la función si hubo un error.
+
+***************************************************
+
+    client_addresses[client_fd] = client_address;
+    std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;
+
+}
+
+					***
+
+client_addresses[client_fd] = client_address;: Almacena la dirección del cliente en el mapa client_addresses, usando el descriptor de archivo del cliente como clave.
+std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;: Imprime un mensaje indicando que un nuevo cliente se ha conectado.
+
+***************************************************
+
+void SocketManager::handleClientEvent(int client_fd) {
+    // Implementar la lógica para recibir y enviar datos a los clientes
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
+    int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+
+					***
+
+void SocketManager::handleClientEvent(int client_fd): Esta función se llama cuando epoll detecta un evento EPOLLIN en el socket de un cliente, lo que indica que hay datos disponibles para leer.
+char buffer[1024];: Declara un buffer para almacenar los datos recibidos del cliente.
+memset(buffer, 0, sizeof(buffer));: Inicializa el buffer con ceros.
+int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);: Recibe datos del cliente y los almacena en el buffer.
+
+***************************************************
+
+if (bytes_received <= 0) {
+        // El cliente se ha desconectado o ha ocurrido un error
+        std::cout << "Cliente desconectado: " << client_fd << std::endl;
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+        close(client_fd);
+        client_addresses.erase(client_fd);
+    }
+
+					***
+
+if (bytes_received <= 0): Verifica si el cliente se ha desconectado o si hubo un error al recibir datos.
+std::cout << "Cliente desconectado: " << client_fd << std::endl;: Imprime un mensaje indicando que el cliente se ha desconectado.
+epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);: Elimina el socket del cliente de epoll.
+close(client_fd);: Cierra el socket del cliente.
+client_addresses.erase(client_fd);: Elimina la dirección del cliente del mapa client_addresses.
+
+***************************************************
+
+    else {
+        // Procesar los datos recibidos
+        // Agregar un salto de línea al final del buffer
+        if (buffer[bytes_received - 1] != '\n') {
+            buffer[bytes_received] = '\n';
+            buffer[bytes_received + 1] = '\0'; // Asegurar que la cadena esté terminada
+            bytes_received++;
+        }
+        std::cout << "Datos recibidos del cliente " << client_fd << ": " << buffer;
+        // Enviar una respuesta al cliente (ejemplo)
+        send(client_fd, "Mensaje recibido.\n", 18, 0);
+    }
+
+					***
+
+else: Si se recibieron datos correctamente.
+if (buffer[bytes_received - 1] != '\n') esta instruccion añade un salto de linea al final de los mensajes.
+std::cout << "Datos recibidos del cliente " << client_fd << ": " << buffer << std::endl;: Imprime los datos recibidos del cliente.
+send(client_fd, "Mensaje recibido.\n", 18, 0);: Envía una respuesta al cliente.
+
+***************************************************

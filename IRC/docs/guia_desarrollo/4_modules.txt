@@ -1,0 +1,10 @@
+Implementación de los Módulos de Gestión de Usuarios, Canales y Autenticación
+
+Gestión de Usuarios:
+	Mantener una lista de usuarios conectados (por ejemplo, usando std::map).
+	Almacenar información de usuario (nickname, username, permisos).
+Gestión de Canales:
+	Mantener una lista de canales (por ejemplo, usando std::map).
+	Almacenar información de canal (nombre, usuarios, tema, modos).
+Autenticación:
+	Implementar la lógica de autenticación (por ejemplo, verificar usuario y contraseña).

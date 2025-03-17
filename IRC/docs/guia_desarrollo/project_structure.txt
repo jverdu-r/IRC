@@ -1,0 +1,18 @@
+.
+├── docs
+│   ├── develop_enviroment.txt
+│   └── project_structure.txt
+├── includes
+│   ├── authentification.h
+│   ├── channel_manager.h
+│   ├── command_parse.h
+│   ├── socket_manager.h
+│   └── user_manager.h
+├── Makefile
+└── src
+	├── authentification.cpp
+	├── channel_manager.cpp
+	├── command_parse.cpp
+	├── main.cpp
+	├── socket_manager.cpp
+	└── user_manager.cpp

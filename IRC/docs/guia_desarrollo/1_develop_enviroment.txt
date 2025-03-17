@@ -1,0 +1,87 @@
+Configuración del Entorno de Desarrollo
+
+	Lenguaje de Programación:
+		Dado que se requiere poll() y sockets TCP/IP, C o C++ son opciones muy adecuadas.
+		C ofrece un rendimiento excelente y control directo sobre los recursos del sistema,
+		mientras que C++ añade la posibilidad de usar programación orientada a objetos,
+		lo cual puede ser útil para organizar la lógica del servidor.
+
+	Sistema Operativo:
+		Linux o macOS son ideales debido a su soporte robusto para sockets y la función poll().
+		Windows también puede usarse, pero requeriría adaptaciones para el manejo de sockets
+		y el equivalente de poll() (como WSAPoll).
+
+	Herramientas de Desarrollo:
+		-Compilador: GCC (para C) o G++ (para C++).
+		-Editor de Código: Visual Studio Code, Sublime Text, Vim o Emacs.
+		-Herramientas de Depuración: GDB (para C/C++).
+		-Control de Versiones: Git (para colaborar y gestionar el código).
+	
+	Bibliotecas:
+		No se requieren bibliotecas externas para la funcionalidad básica de sockets y poll(),
+		ya que estas funciones están disponibles en las bibliotecas estándar de C/C++.
+		Arquitectura del Servidor
+		La arquitectura del servidor puede dividirse en los siguientes componentes principales:
+
+			Módulo de Sockets:
+				Responsable de crear y gestionar los sockets del servidor, aceptar
+				conexiones entrantes y comunicarse con los clientes.
+			Módulo de Gestión de Eventos:
+				Implementa epoll() para manejar múltiples clientes simultáneamente
+				y detectar eventos de entrada/salida en los sockets.
+			Módulo de Parsing de Comandos:
+				Analiza los mensajes recibidos de los clientes y extrae los comandos
+				IRC y sus argumentos.
+			Módulo de Gestión de Usuarios:
+				Mantiene una lista de usuarios conectados, sus nicknames, usernames
+				y permisos.
+			Módulo de Gestión de Canales:
+				Gestiona la creación, eliminación y configuración de canales, así como
+				la pertenencia de los usuarios a los canales.
+			Módulo de Autenticación:
+				verifica las credenciales de los usuarios que intentan conectarse al
+				servidor.
+			Módulo de Comandos IRC:
+				Implementa la lógica de los comandos IRC
+				(NICK, USER, PRIVMSG, JOIN, etc.).
+	
+	Implementación del Servidor Base y Sockets
+	
+		Creación del Socket del Servidor:
+			Usar la función socket() para crear un socket TCP.
+			Usar la función bind() para asociar el socket a una dirección IP y un puerto.
+			Usar la función listen() para poner el socket en modo de escucha.
+		Aceptación de Conexiones:
+			Usar la función accept() para aceptar conexiones entrantes de los clientes.
+			Configurar los sockets de los clientes como no bloqueantes usando fcntl() o
+			setsockopt().
+	
+	Manejo de Eventos con poll():
+		Crear un array de estructuras pollfd para almacenar los sockets del servidor y
+		los clientes.
+		Llamar a epoll() para esperar eventos en los sockets.
+		Iterar sobre el array pollfd para procesar los eventos
+		(conexiones nuevas, datos recibidos, etc.).
+
+	Comunicación con los Clientes:
+		Usar la función recv() para recibir datos de los clientes.
+		Usar la función send() para enviar datos a los clientes.
+	
+	Parsing de Comandos:
+		Crear una funcion que analice los datos recividos de los clientes y
+		extraiga los comandos IRC y sus argumentos.
+
+	Consejos Adicionales
+		Diseño Modular: Divide el servidor en módulos bien definidos para
+		facilitar el desarrollo y el mantenimiento.
+
+	Manejo de Errores: 
+		Implementa un manejo de errores robusto para detectar y
+		manejar problemas en la comunicación y la lógica del servidor.
+	
+	Pruebas Incrementales:
+		Prueba cada módulo individualmente antes de integrarlo con el resto del servidor.
+
+	Documentación:
+		Documenta el código y la arquitectura del servidor para facilitar
+		la colaboración y el mantenimiento.
