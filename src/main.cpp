@@ -1,4 +1,5 @@
 #include "../includes/socket_manager.h"
+#include "../includes/command_handler.h"
 #include <iostream>
 #include <cstdlib>
 

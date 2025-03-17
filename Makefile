@@ -7,9 +7,11 @@ INC_DIR = includes
 OBJ_DIR = obj
 
 SOURCES = $(SRC_DIR)/main.cpp \
-			$(SRC_DIR)/socket_manager.cpp
+			$(SRC_DIR)/socket_manager.cpp \
+			$(SRC_DIR)/command_handler.cpp
 OBJECTS = $(OBJ_DIR)/main.o\
-			$(OBJ_DIR)/socket_manager.o
+			$(OBJ_DIR)/socket_manager.o \
+			$(OBJ_DIR)/command_handler.o
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 		$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@

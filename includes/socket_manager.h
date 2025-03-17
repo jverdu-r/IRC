@@ -10,6 +10,8 @@
 #include <map>
 #include <set>
 #include <string>
+#include <cerrno>
+#include "command_handler.h"
 
 #define MAX_EVENTS 10 //numero de evento que epoll puede manejar a la vez
 
@@ -27,6 +29,7 @@ class SocketManager
 		std::map<int, sockaddr_in> client_addresses;
 		std::set<int> authenticated_clients;
 		std::string server_password;
+		CommandHandler command_handler;
 		void acceptConnection();
 		void handleClientEvent(int client_fd);
 		void broadcastMessage(const std::string& message, int sender_fd);
