@@ -11,6 +11,7 @@
 #include <set>
 #include "command_handler.h"
 #include "user_manager.h"
+#include "event_handler.h"
 
 #define MAX_EVENTS 10
 
@@ -20,9 +21,10 @@ public:
     ~SocketManager();
     void run();
     void acceptConnection();
-    void handleClientEvent(int client_fd);
     void broadcastMessage(const std::string& message, int sender_fd);
     void sendMessageToClient(int client_fd, const std::string& message);
+    int getEpollFd() const { return epoll_fd; } // Método público para obtener epoll_fd
+
 private:
     int server_fd;
     int epoll_fd;
@@ -30,10 +32,11 @@ private:
     std::map<int, sockaddr_in> client_addresses;
     std::map<int, std::string> nicknames;
     std::set<int> authenticated_clients;
-    CommandHandler command_handler; // command_handler debe ir antes de user_manager
+    CommandHandler command_handler;
     UserManager user_manager;
     std::map<int, std::string> usernames;
     std::map<int, std::string> partial_messages;
+    EventHandler event_handler;
 };
 
 #endif

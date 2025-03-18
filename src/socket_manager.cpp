@@ -15,7 +15,8 @@ SocketManager::SocketManager(int port, const std::string& password)
       command_handler(password, nicknames, authenticated_clients, user_manager, *this), // Inicializar command_handler
       user_manager(usernames), // Inicializar user_manager
       usernames(), // Inicializar usernames
-      partial_messages() // Inicializar partial_messages
+      partial_messages(), // Inicializar partial_messages
+      event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients) // Inicializar event_handler
 {
     // 1. Crear el socket del servidor
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -75,17 +76,28 @@ SocketManager::~SocketManager() {
 
 void SocketManager::run() {
     epoll_event events[MAX_EVENTS];
+
     while (true) {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
         if (num_events == -1) {
-            std::cerr << "Error en epoll_wait." << std::endl;
-            continue;
+            std::cerr << "Error en epoll_wait: " << strerror(errno) << std::endl;
+            break;
         }
+
         for (int i = 0; i < num_events; ++i) {
-            if (events[i].data.fd == server_fd) {
-                acceptConnection();
-            } else {
-                handleClientEvent(events[i].data.fd);
+            if (events[i].events & EPOLLIN) {
+                if (events[i].data.fd == server_fd) {
+                    acceptConnection();
+                } else {
+                    event_handler.handleClientEvent(events[i].data.fd); // Usa event_handler
+                }
+            } else if (events[i].events & (EPOLLHUP | EPOLLERR)) {
+                // Cliente desconectado o error
+                std::cout << "Cliente " << events[i].data.fd << " desconectado o error." << std::endl;
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                close(events[i].data.fd);
+                client_addresses.erase(events[i].data.fd);
+                partial_messages.erase(events[i].data.fd);
             }
         }
     }
@@ -119,89 +131,7 @@ void SocketManager::acceptConnection()
      send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
 }
 
-void SocketManager::handleClientEvent(int client_fd)
-{
-    char buffer[1024];
-    memset(buffer, 0, sizeof(buffer));
-    int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
 
-    if (bytes_received == 0)
-    {
-        // Cliente envió EOF (Ctrl+D)
-        std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
-        if (partial_messages.find(client_fd) != partial_messages.end()) {
-            std::cout << "Datos recibidos del cliente " << client_fd << ": " << partial_messages[client_fd];
-            if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
-                broadcastMessage(partial_messages[client_fd], client_fd);
-            }
-            partial_messages.erase(client_fd);
-        }
-        else
-        {
-            // No hay mensajes parciales, desconectar
-            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-            close(client_fd);
-            client_addresses.erase(client_fd);
-        }
-    }
-    else if (bytes_received < 0)
-    {
-        std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-        close(client_fd);
-        client_addresses.erase(client_fd);
-        partial_messages.erase(client_fd);
-    }
-    else
-    {
-        std::string received_data(buffer, bytes_received);
-
-        // Manejo de la contraseña y comandos
-        if (received_data.find("PASS ") == 0)
-        {
-            command_handler.handleCommand(client_fd, received_data);
-            return;
-        }
-
-        // Verificar si el cliente esta autenticado
-        if (authenticated_clients.find(client_fd) == authenticated_clients.end())
-        {
-            send(client_fd, "Por favor autenticate primero.\n", 31, 0);
-            close(client_fd);
-            client_addresses.erase(client_fd);
-            return;
-        }
-
-        if (partial_messages.find(client_fd) != partial_messages.end())
-        {
-            received_data = partial_messages[client_fd] + received_data;
-            partial_messages.erase(client_fd);
-        }
-
-        size_t newline_pos = received_data.find('\n');
-
-        if (newline_pos != std::string::npos)
-        {
-            std::cout << "Datos recibidos del cliente " << client_fd << ": " << received_data;
-
-            // Manejo del comando NICK
-            if (received_data.find("NICK ") == 0)
-            {
-                command_handler.handleCommand(client_fd, received_data);
-            }
-            else if (authenticated_clients.find(client_fd) != authenticated_clients.end())
-            {
-                broadcastMessage(received_data, client_fd);
-            }
-            else
-            {
-                send(client_fd, "Por favor autenticate primero.\n", 31, 0);
-            }
-        } else {
-            partial_messages[client_fd] = received_data;
-        }
-    }
-}
 
 void SocketManager::broadcastMessage(const std::string& message, int sender_fd)
 {
