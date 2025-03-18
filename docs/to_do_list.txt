@@ -1,0 +1,23 @@
+Próximos Pasos
+1.Username:
+	-Implementa el manejo del username.
+2.Canales:
+	-Crea una estructura para representar los canales (nombre, miembros, operadores, etc.).
+	-Implementa los comandos JOIN y PART.
+3.Mensajes de Canal y Privados:
+	-Distingue entre mensajes de canal y privados.
+	-Implementa el comando PRIVMSG.
+4.Operadores:
+	-Implementa la gestión de operadores de canal.
+	-Implementa los comandos de operador (KICK, INVITE, TOPIC, MODE).
+5.Pruebas con bircd:
+	-Realiza pruebas exhaustivas con bircd para verificar la compatibilidad y corregir errores.
+6.Manejo de Errores y Excepciones:
+	-Asegúrate de que tu servidor maneja correctamente los errores y las excepciones.
+################	Consideraciones Adicionales		##################
+*.Estructura de Datos:
+	-Considera usar estructuras de datos eficientes para almacenar la información de los clientes y los canales.
+*.Modularidad:
+	-Mantén el código modular y bien organizado para facilitar el mantenimiento y las pruebas.
+*.Documentación:
+	-Documenta tu código para facilitar la comprensión y el mantenimiento.

@@ -1,10 +1,22 @@
 #include "../includes/socket_manager.h"
 #include <iostream>
+#include <arpa/inet.h>
 #include <cstring> // para memset
 #include <cstdlib> // para exit
+#include <cerrno> // Añadido para errno
 
 SocketManager::SocketManager(int port, const std::string& password)
-    : server_password(password), command_handler(password, nicknames, authenticated_clients) {
+    : server_fd(socket(AF_INET, SOCK_STREAM, 0)),
+      epoll_fd(epoll_create1(0)),
+      server_password(password),
+      client_addresses(), // Inicializar client_addresses
+      nicknames(), // Inicializar nicknames
+      authenticated_clients(), // Inicializar authenticated_clients
+      command_handler(password, nicknames, authenticated_clients, user_manager, *this), // Inicializar command_handler
+      user_manager(usernames), // Inicializar user_manager
+      usernames(), // Inicializar usernames
+      partial_messages() // Inicializar partial_messages
+{
     // 1. Crear el socket del servidor
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
@@ -79,45 +91,42 @@ void SocketManager::run() {
     }
 }
 
-void SocketManager::acceptConnection() {
+void SocketManager::acceptConnection()
+{
     sockaddr_in client_address;
     socklen_t client_address_len = sizeof(client_address);
     int client_fd = accept(server_fd, (sockaddr*)&client_address, &client_address_len);
-    if (client_fd == -1) {
-        std::cerr << "Error al aceptar la conexion." << std::endl;
+
+    if (client_fd < 0)
+    {
+        std::cerr << "Error en accept(): " << strerror(errno) << std::endl;
         return;
     }
 
-    // Configurar el socket del cliente como no bloqueante
     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-    // Agregar el socket del cliente a epoll
     epoll_event event;
     event.events = EPOLLIN;
     event.data.fd = client_fd;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event) == -1) {
-        std::cerr << "Error al agragar el socket del cliente a epoll." << std::endl;
-        close(client_fd);
-        return;
-    }
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &event);
 
     client_addresses[client_fd] = client_address;
+    nicknames[client_fd] = "Invitado"; // Inicializar el nickname aquí
     std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;
 
-    // Enviar mensaje de bienvenida e instrucciones de contraseña
-    std::string welcome_message = "Bienvenido al servidor IRC.\nPor favor, introduzca la contraseña usando el comando PASS <contraseña>.\n";
-    send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
+     // Enviar mensaje de bienvenida
+     std::string welcome_message = "Bienvenido al servidor IRC. Por favor, introduce la contraseña con el comando PASS.\n";
+     send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
 }
 
-void SocketManager::handleClientEvent(int client_fd) {
+void SocketManager::handleClientEvent(int client_fd)
+{
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
 
-    //std::cout << "bytes_received: " << bytes_received << std::endl;
-    //std::cout << "buffer: " << buffer << std::endl;
-
-    if (bytes_received == 0) {
+    if (bytes_received == 0)
+    {
         // Cliente envió EOF (Ctrl+D)
         std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
         if (partial_messages.find(client_fd) != partial_messages.end()) {
@@ -126,50 +135,66 @@ void SocketManager::handleClientEvent(int client_fd) {
                 broadcastMessage(partial_messages[client_fd], client_fd);
             }
             partial_messages.erase(client_fd);
-        } else {
+        }
+        else
+        {
             // No hay mensajes parciales, desconectar
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
             close(client_fd);
             client_addresses.erase(client_fd);
         }
-    } else if (bytes_received < 0) {
+    }
+    else if (bytes_received < 0)
+    {
         std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
         close(client_fd);
         client_addresses.erase(client_fd);
         partial_messages.erase(client_fd);
-    } else {
+    }
+    else
+    {
         std::string received_data(buffer, bytes_received);
-        //std::cout << "received_data: " << received_data << std::endl;
 
         // Manejo de la contraseña y comandos
-        if (received_data.find("PASS ") == 0) {
+        if (received_data.find("PASS ") == 0)
+        {
             command_handler.handleCommand(client_fd, received_data);
             return;
         }
 
         // Verificar si el cliente esta autenticado
-        if (authenticated_clients.find(client_fd) == authenticated_clients.end()) {
+        if (authenticated_clients.find(client_fd) == authenticated_clients.end())
+        {
             send(client_fd, "Por favor autenticate primero.\n", 31, 0);
             close(client_fd);
             client_addresses.erase(client_fd);
             return;
         }
 
-        if (partial_messages.find(client_fd) != partial_messages.end()) {
-            //std::cout << "partial_messages: " << partial_messages[client_fd] << std::endl;
+        if (partial_messages.find(client_fd) != partial_messages.end())
+        {
             received_data = partial_messages[client_fd] + received_data;
             partial_messages.erase(client_fd);
         }
 
         size_t newline_pos = received_data.find('\n');
-        //std::cout << "newline_pos: " << newline_pos << std::endl;
 
-        if (newline_pos != std::string::npos) {
+        if (newline_pos != std::string::npos)
+        {
             std::cout << "Datos recibidos del cliente " << client_fd << ": " << received_data;
-            if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
+
+            // Manejo del comando NICK
+            if (received_data.find("NICK ") == 0)
+            {
+                command_handler.handleCommand(client_fd, received_data);
+            }
+            else if (authenticated_clients.find(client_fd) != authenticated_clients.end())
+            {
                 broadcastMessage(received_data, client_fd);
-            } else {
+            }
+            else
+            {
                 send(client_fd, "Por favor autenticate primero.\n", 31, 0);
             }
         } else {
@@ -178,7 +203,21 @@ void SocketManager::handleClientEvent(int client_fd) {
     }
 }
 
-void SocketManager::broadcastMessage(const std::string& message, int sender_fd) {
+void SocketManager::broadcastMessage(const std::string& message, int sender_fd)
+{
+    std::string sender_nickname = nicknames[sender_fd];
+    std::string sender_username = user_manager.getUserName(sender_fd);
+    std::string formatted_message = "[" + sender_nickname + "!" + sender_username + "]: " + message;
+
+    for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it) {
+        int client_fd = it->first;
+        if (client_fd != sender_fd && authenticated_clients.find(client_fd) != authenticated_clients.end()) {
+            send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
+        }
+    }
+}
+
+/*void SocketManager::broadcastMessage(const std::string& message, int sender_fd) {
     sockaddr_in sender_addr = client_addresses[sender_fd];
     char ip_address[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(sender_addr.sin_addr), ip_address, INET_ADDRSTRLEN);
@@ -191,4 +230,9 @@ void SocketManager::broadcastMessage(const std::string& message, int sender_fd) 
             send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
         }
     }
+}*/
+
+void SocketManager::sendMessageToClient(int client_fd, const std::string& message)
+{
+    send(client_fd, message.c_str(), message.length(), 0);
 }
