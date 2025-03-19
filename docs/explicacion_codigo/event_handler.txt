@@ -1,0 +1,33 @@
+Propósito: Maneja los eventos de los clientes.
+
+Funciones:
+
+EventHandler::EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager, std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses, std::set<int>& authenticated_clients):
+	
+	-Constructor de la clase.
+	
+	-Inicializa los objetos de las clases SocketManager, CommandHandler, UserManager, y los 
+	
+	-mapas y sets de la clase.
+
+void EventHandler::handleClientEvent(int client_fd):
+	
+	-Recibe datos del cliente utilizando recv().
+	
+	-Maneja diferentes escenarios:
+		
+		-Cliente envía EOF (Ctrl+D): Cierra la conexión del cliente.
+		
+		-Error en recv(): Cierra la conexión del cliente.
+		
+		-Mensaje normal:
+
+			-Maneja el comando PASS.
+			
+			-Verifica si el cliente está autenticado.
+			
+			-Maneja comandos NICK y USER.
+			
+			-Envía mensajes a todos los clientes si el cliente está autenticado.
+			
+			-Almacena mensajes parciales en el mapa partial_messages.

@@ -1,0 +1,68 @@
+Propósito: Gestiona el socket del servidor, las conexiones de los clientes y la lógica principal del servidor IRC.
+
+Funciones:
+
+SocketManager::SocketManager(int port, const std::string& password):
+	-Constructor de la clase.
+	
+	-Inicializa el socket del servidor (server_fd) utilizando socket().
+	
+	-Configura el socket para reutilizar la dirección local (SO_REUSEADDR).
+	
+	-Configura la dirección del servidor (server_address).
+	
+	-Asocia el socket a la dirección del servidor utilizando bind().
+	
+	-Pone el socket en modo de escucha utilizando listen().
+	
+	-Crea la instancia de epoll (epoll_fd) utilizando epoll_create1().
+	
+	-Agrega el socket del servidor a epoll para detectar nuevas conexiones.
+	
+	-Inicializa las variables de clase, y los objetos de las clases command_handler, user_manager, y event_handler.
+	
+SocketManager::~SocketManager():
+	
+	-Destructor de la clase.
+	
+	-Cierra el descriptor de archivo de epoll y el socket del servidor.
+
+void SocketManager::run():
+	
+	-Bucle principal del servidor.
+	
+	-Espera eventos de epoll utilizando epoll_wait().
+	
+	-Procesa los eventos recibidos:
+	
+	-Si el evento es una nueva conexión, llama a acceptConnection().
+	
+	-Si el evento es un mensaje de un cliente, llama a event_handler.handleClientEvent().
+	
+	-Si el evento es una desconexión, cierra la conexión del cliente.
+
+void SocketManager::acceptConnection():
+
+	-Acepta una nueva conexión de cliente utilizando accept().
+	
+	-Configura el socket del cliente como no bloqueante.
+	
+	-Agrega el socket del cliente a epoll para detectar mensajes.
+	
+	-Inicializa los valores del mapa client_addresses y nicknames.
+	
+	-Envia un mensaje de bienvenida al cliente.
+
+void SocketManager::broadcastMessage(const std::string& message, int sender_fd):
+	
+	-Envía un mensaje a todos los clientes conectados, excepto al remitente.
+	
+	-Obtiene el nickname y el username del remitente.
+	
+	-Crea un mensaje formateado con el nickname y el username del remitente.
+	
+	-Recorre la lista de clientes y envía el mensaje a cada uno.
+
+void SocketManager::sendMessageToClient(int client_fd, const std::string& message):
+
+	-Envia un mensaje a un cliente especifico.

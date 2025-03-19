@@ -147,21 +147,6 @@ void SocketManager::broadcastMessage(const std::string& message, int sender_fd)
     }
 }
 
-/*void SocketManager::broadcastMessage(const std::string& message, int sender_fd) {
-    sockaddr_in sender_addr = client_addresses[sender_fd];
-    char ip_address[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(sender_addr.sin_addr), ip_address, INET_ADDRSTRLEN);
-
-    std::string formatted_message = "[" + std::string(ip_address) + "]: " + message;
-
-    for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it) {
-        int client_fd = it->first;
-        if (client_fd != sender_fd && authenticated_clients.find(client_fd) != authenticated_clients.end()) {
-            send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
-        }
-    }
-}*/
-
 void SocketManager::sendMessageToClient(int client_fd, const std::string& message)
 {
     send(client_fd, message.c_str(), message.length(), 0);

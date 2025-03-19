@@ -1,0 +1,17 @@
+Propósito: Gestiona los nombres de usuario de los clientes.
+
+Funciones:
+	
+UserManager::UserManager(std::map<int, std::string>& usernames):
+	
+	-Constructor de la clase.
+	
+	-Inicializa la lista de usernames.
+
+void UserManager::setUserName(int client_fd, const std::string& username):
+	
+	-Establece el username del cliente.
+	
+	-std::string UserManager::getUserName(int client_fd):
+	
+	-Obtiene el username del cliente.

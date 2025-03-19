@@ -1,0 +1,95 @@
+1. src/main.cpp
+
+	Propósito:
+		Punto de entrada del programa.
+		Maneja los argumentos de línea de comandos (puerto y contraseña).
+		Crea una instancia de SocketManager y ejecuta el servidor.
+		Funcionalidad:
+		Verifica si se proporcionan los argumentos correctos.
+		Convierte el puerto a un entero y verifica su validez.
+		Crea un objeto SocketManager con el puerto y la contraseña.
+		Llama al método run() de SocketManager para iniciar el servidor.
+2. src/socket_manager.cpp
+
+	Propósito:
+		Gestiona el socket del servidor y las conexiones de los clientes.
+		Utiliza epoll para manejar múltiples conexiones simultáneas.
+		Implementa la lógica principal del servidor IRC.
+		Funcionalidad:
+		Inicializa el socket del servidor, lo asocia a la dirección y lo pone en modo de escucha.
+		Crea una instancia de epoll.
+		Acepta nuevas conexiones de clientes.
+		Recibe y envía mensajes a los clientes.
+		Maneja la desconexión de los clientes.
+		Broadcast mensajes a los clientes autenticados.
+		envia mensajes directos a los clientes.
+3. src/command_handler.cpp
+
+	Propósito:
+		Maneja los comandos enviados por los clientes.
+		Implementa la lógica para los comandos PASS, NICK y USER.
+		Funcionalidad:
+		Analiza los comandos recibidos.
+		Verifica la contraseña del cliente.
+		Cambia el nickname del cliente.
+		Cambia el username del cliente.
+		envia mensajes de error si el comando es desconocido.
+4. src/user_manager.cpp
+
+	Propósito:
+		Gestiona los nombres de usuario de los clientes.
+		Funcionalidad:
+		Almacena y recupera los nombres de usuario asociados a los file descriptors de los clientes.
+5. src/event_handler.cpp
+
+	Propósito:
+		Gestiona los eventos de los clientes.
+		Implementa la logica de recepcion y envio de mensajes.
+		Funcionalidad:
+		Recibe datos de los clientes.
+		Maneja comandos y mensajes regulares.
+		Maneja la desconexion de los clientes.
+6. includes/socket_manager.h
+
+	Propósito:
+		Define la clase SocketManager.
+		Declara los métodos y miembros de la clase.
+		Contenido:
+		Declaración de la clase SocketManager.
+		Declaración de los métodos públicos y privados.
+		Declaración de los miembros de la clase.
+7. includes/command_handler.h
+
+	Propósito:
+		Define la clase CommandHandler.
+		Declara los métodos y miembros de la clase.
+		Contenido:
+		Declaración de la clase CommandHandler.
+		Declaración de los métodos públicos y privados.
+		Declaración de los miembros de la clase.
+8. includes/user_manager.h
+
+	Propósito:
+		Define la clase UserManager.
+		Declara los métodos y miembros de la clase.
+		Contenido:
+		Declaración de la clase UserManager.
+		Declaración de los métodos públicos y privados.
+		Declaración de los miembros de la clase.
+9. includes/event_handler.h
+
+	Propósito:
+		Define la clase EventHandler.
+		Declara los metodos y miembros de la clase.
+		Contenido:
+		Declaracion de la clase EventHandler.
+		Declaracion de los metodos publicos y privados.
+		Declaracion de los miembros de la clase.
+10. Makefile
+
+	Propósito:
+		Automatiza el proceso de compilación del programa.
+		Funcionalidad:
+		Define las variables de compilación (compilador, flags, etc.).
+		Define las reglas para compilar los archivos fuente y enlazar los objetos.
+		Define las reglas para limpiar los archivos generados.

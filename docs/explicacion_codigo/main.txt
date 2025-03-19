@@ -1,0 +1,13 @@
+Propósito: Punto de entrada del programa.
+
+int main(int argc, char* argv[]):
+
+	-Verifica si se proporcionan los argumentos de línea de comandos correctos (puerto y contraseña).
+	
+	-Convierte el puerto a un entero y verifica si está en el rango válido (1-65535).
+	
+	-Crea una instancia de la clase SocketManager con el puerto y la contraseña proporcionados.
+	
+	-Llama al método run() del objeto SocketManager para iniciar el servidor.
+	
+	-Devuelve 0 si el programa se ejecuta correctamente, o 1 si hay un error.

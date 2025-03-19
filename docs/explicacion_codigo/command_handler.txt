@@ -1,0 +1,26 @@
+Propósito: Maneja los comandos enviados por los clientes.
+
+Funciones:
+
+CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager):
+  
+  -Constructor de la clase.
+  
+  -Inicializa la contraseña del servidor, la lista de nicknames, la lista de clientes autenticados y el objeto UserManager.
+  
+  -Inicializa el mapa commandMap con los comandos disponibles.
+
+void CommandHandler::handleCommand(int client_fd, const std::string& command):
+
+  -Analiza el comando recibido del cliente.
+  
+  -Extrae el nombre del comando y los argumentos.
+  
+  -Determina el tipo de comando utilizando el mapa commandMap.
+  
+  -Ejecuta el comando correspondiente:
+    
+    -CMD_PASS: Verifica la contraseña del cliente y lo autentica si es correcta.
+    -CMD_NICK: Cambia el nickname del cliente.
+    -CMD_USER: Establece el username del cliente.
+    -CMD_UNKNOWN: Envía un mensaje de error si el comando es desconocido.
