@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   socket_manager.cpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/19 16:01:11 by jverdu-r          #+#    #+#             */
+/*   Updated: 2025/03/19 18:25:44 by jverdu-r         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../includes/socket_manager.h"
 #include <iostream>
 #include <arpa/inet.h>
@@ -131,23 +143,35 @@ void SocketManager::acceptConnection()
      send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
 }
 
-
-
-void SocketManager::broadcastMessage(const std::string& message, int sender_fd)
-{
+void SocketManager::broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName) {
     std::string sender_nickname = nicknames[sender_fd];
     std::string sender_username = user_manager.getUserName(sender_fd);
     std::string formatted_message = "[" + sender_nickname + "!" + sender_username + "]: " + message;
 
-    for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it) {
-        int client_fd = it->first;
-        if (client_fd != sender_fd && authenticated_clients.find(client_fd) != authenticated_clients.end()) {
-            send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
+    const std::map<std::string, Channel>& channels = command_handler.getChannels(); // Obtener el mapa channels
+
+    if (channels.find(channelName) != channels.end()) {
+        std::set<int>::iterator it;
+        for (it = channels.find(channelName)->second.users.begin(); it != channels.find(channelName)->second.users.end(); ++it) {
+            std::cout << "channel name: " + channelName << std::endl;
+            int userFd = *it;
+            if (userFd != sender_fd && authenticated_clients.find(userFd) != authenticated_clients.end()) {
+                send(userFd, formatted_message.c_str(), formatted_message.length(), 0);
+                std::cout << "fd de destino 1: " + userFd << std::endl;
+            }
+        }
+    } else {
+        for (std::map<int, sockaddr_in>::iterator it = client_addresses.begin(); it != client_addresses.end(); ++it) {
+            int client_fd = it->first;
+            if (client_fd != sender_fd && authenticated_clients.find(client_fd) != authenticated_clients.end()) {
+                send(client_fd, formatted_message.c_str(), formatted_message.length(), 0);
+                std::cout << "fd de destino 2: " + client_fd << std::endl;
+            }
         }
     }
 }
 
-void SocketManager::sendMessageToClient(int client_fd, const std::string& message)
-{
+void SocketManager::sendMessageToClient(int client_fd, const std::string& message) {
+    std::cout << "Enviando mensaje al cliente " << client_fd << ": " << message;
     send(client_fd, message.c_str(), message.length(), 0);
 }

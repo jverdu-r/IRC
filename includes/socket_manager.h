@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   socket_manager.h                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/19 16:01:28 by jverdu-r          #+#    #+#             */
+/*   Updated: 2025/03/19 16:29:58 by jverdu-r         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef SOCKET_MANAGER_H
 #define SOCKET_MANAGER_H
 
@@ -21,7 +33,7 @@ public:
     ~SocketManager();
     void run();
     void acceptConnection();
-    void broadcastMessage(const std::string& message, int sender_fd);
+    void broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName);
     void sendMessageToClient(int client_fd, const std::string& message);
     int getEpollFd() const { return epoll_fd; } // Método público para obtener epoll_fd
 
