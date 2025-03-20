@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:28 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/19 16:29:58 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/20 17:55:30 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@
 
 class SocketManager {
 public:
-    SocketManager(int port, const std::string& password);
+SocketManager(int port, const std::string& password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, Authentication& authentication); // Update constructor declaration
     ~SocketManager();
     void run();
     void acceptConnection();
@@ -40,14 +40,16 @@ public:
 private:
     int server_fd;
     int epoll_fd;
+    int port; // Added port member
+    std::string password; // Added password member
     std::string server_password;
     std::map<int, sockaddr_in> client_addresses;
     std::map<int, std::string> nicknames;
     std::set<int> authenticated_clients;
-    CommandHandler command_handler;
-    UserManager user_manager;
     std::map<int, std::string> usernames;
     std::map<int, std::string> partial_messages;
+    CommandHandler command_handler;
+    UserManager user_manager;
     EventHandler event_handler;
 };
 
