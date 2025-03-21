@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:15 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 11:05:59 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 16:48:13 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,18 +30,21 @@ std::string UserManager::getUserName(int client_fd)
 }
 
 std::string UserManager::getUserChannel(int client_fd) const {
-    if (user_channels.find(client_fd) != user_channels.end()) {
+    if (user_channels.find(client_fd) != user_channels.end())
+    {
         return user_channels.at(client_fd);
     }
-    return ""; // O algún valor predeterminado si el usuario no tiene un canal
+    return "";
 }
 
-void UserManager::setUserChannel(int client_fd, const std::string& channel){
+void UserManager::setUserChannel(int client_fd, const std::string& channel)
+{
     user_channels[client_fd] = channel;
     std::cout << "Usuario " << client_fd << " se ha unido al canal: " << channel << std::endl;
 }
 
-bool UserManager::userNameExists(const std::string& username) {
+bool UserManager::userNameExists(const std::string& username)
+{
     for (std::map<int, std::string>::const_iterator it = usernames.begin(); it != usernames.end(); ++it) {
         if (it->second == username) {
             return true;
