@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:35 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/19 16:56:08 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 11:16:52 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,10 @@ class CommandHandler
         void listUsersInChannel(int client_fd, const std::string& channelName);
         void partChannel(int client_fd, const std::string& channelName);
         void joinChannel(int client_fd, const std::string& channelName);
+        void handlePassCommand(int client_fd, const std::string& cmdArgs);
+        void handleKickCommand(int client_fd, const std::string& cmdArgs);
+        void handleUserCommand(int client_fd, const std::string& cmdArgs);
+        void handleNickCommand(int client_fd, const std::string& cmdArgs);
         const std::map<std::string, Channel>& getChannels() const;
 
     private:

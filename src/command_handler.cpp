@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 10:47:01 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 11:23:56 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,11 @@ CommandHandler::CommandHandler(const std::string& server_password, std::map<int,
     commandMap["/PASS"] = CMD_PASS;
     commandMap["/NICK"] = CMD_NICK;
     commandMap["/USER"] = CMD_USER;
-    commandMap["/JOIN"] = CMD_JOIN; // Nuevo
-    commandMap["/PART"] = CMD_PART; // Nuevo
-    commandMap["/NAMES"] = CMD_NAMES; // Nuevo
-    commandMap["/LIST"] = CMD_LIST; // Nuevo
-    commandMap["/KICK"] = CMD_KICK; // Nuevo
+    commandMap["/JOIN"] = CMD_JOIN;
+    commandMap["/PART"] = CMD_PART;
+    commandMap["/NAMES"] = CMD_NAMES;
+    commandMap["/LIST"] = CMD_LIST;
+    commandMap["/KICK"] = CMD_KICK;
     std::cout << "Contenido de commandMap:" << std::endl;
     for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it) {
         std::cout << "Comando: " << it->first << ", Tipo: " << it->second << std::endl;
@@ -55,35 +55,15 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command) {
 
     switch (cmdType) {
         case CMD_PASS: {
-            std::string client_password = cmdArgs.substr(0, cmdArgs.find('\n'));
-            if (client_password == server_password) {
-                send(client_fd, "Contraseña correcta. Bienvenido al servidor IRC.\n", 50, 0);
-                nicknames[client_fd] = "Invitado";
-                authenticated_clients.insert(client_fd);
-            } else {
-                send(client_fd, "Contraseña incorrecta. Inténtalo de nuevo.\n", 38, 0);
-                close(client_fd);
-            }
+            handlePassCommand(client_fd, cmdArgs);
             break;
         }
         case CMD_NICK: {
-            if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
-                std::string new_nickname = cmdArgs.substr(0, cmdArgs.find('\n'));
-                nicknames[client_fd] = new_nickname;
-                socket_manager.sendMessageToClient(client_fd, ("Nickname cambiado a " + new_nickname + ".\n"));
-            } else {
-                socket_manager.sendMessageToClient(client_fd, "Debes autenticarte antes de cambiar tu nickname.\n");
-            }
+            handleNickCommand(client_fd, cmdArgs);
             break;
         }
         case CMD_USER: {
-            if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
-                std::string username = cmdArgs.substr(0, cmdArgs.find(' '));
-                user_manager.setUserName(client_fd, username);
-                socket_manager.sendMessageToClient(client_fd, ("Username establecido a " + username + ".\n"));
-            } else {
-                socket_manager.sendMessageToClient(client_fd, "Debes autenticarte antes de establecer tu username.\n");
-            }
+            handleUserCommand(client_fd, cmdArgs);
             break;
         }
         case CMD_JOIN: {
@@ -104,10 +84,7 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command) {
             break;
         }
         case CMD_KICK: {
-            size_t spacePosKick = cmdArgs.find(' ');
-            std::string userName = cmdArgs.substr(0, spacePosKick);
-            std::string channelName = cmdArgs.substr(spacePosKick + 1, cmdArgs.find('\n'));
-            kickUserFromChannel(client_fd, userName, channelName);
+            handleKickCommand(client_fd, cmdArgs);
             break;
         }
         default:
@@ -213,4 +190,50 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
 
 const std::map<std::string, Channel>& CommandHandler::getChannels() const {
     return channels;
+}
+
+void CommandHandler::handlePassCommand(int client_fd, const std::string& cmdArgs) {
+    std::string client_password = cmdArgs.substr(0, cmdArgs.find('\n'));
+    if (client_password == server_password) {
+        send(client_fd, "Contraseña correcta. Bienvenido al servidor IRC.\n", 50, 0);
+        nicknames[client_fd] = "Invitado";
+        authenticated_clients.insert(client_fd);
+    } else {
+        send(client_fd, "Contraseña incorrecta. Inténtalo de nuevo.\n", 38, 0);
+        close(client_fd);
+    }
+}
+
+void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs) {
+    size_t spacePosKick = cmdArgs.find(' ');
+    std::string userName = cmdArgs.substr(0, spacePosKick);
+    std::string channelName = cmdArgs.substr(spacePosKick + 1, cmdArgs.find('\n'));
+    kickUserFromChannel(client_fd, userName, channelName);
+}
+
+void CommandHandler::handleUserCommand(int client_fd, const std::string& cmdArgs) {
+    if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
+        std::string username = cmdArgs.substr(0, cmdArgs.find(' '));
+
+        // Verificar unicidad del nombre de usuario
+        if (user_manager.userNameExists(username)) {
+            socket_manager.sendMessageToClient(client_fd, "El nombre de usuario ya está en uso.\n");
+        } else {
+            // Actualizar mapa de nombres de usuario
+            user_manager.setUserName(client_fd, username);
+            socket_manager.sendMessageToClient(client_fd, ("Username establecido a " + username + ".\n"));
+        }
+    } else {
+        socket_manager.sendMessageToClient(client_fd, "Debes autenticarte antes de establecer tu username.\n");
+    }
+}
+
+void CommandHandler::handleNickCommand(int client_fd, const std::string& cmdArgs) {
+    if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
+        std::string new_nickname = cmdArgs.substr(0, cmdArgs.find('\n'));
+        nicknames[client_fd] = new_nickname;
+        socket_manager.sendMessageToClient(client_fd, ("Nickname cambiado a " + new_nickname + ".\n"));
+    } else {
+        socket_manager.sendMessageToClient(client_fd, "Debes autenticarte antes de cambiar tu nickname.\n");
+    }
 }

@@ -21,7 +21,9 @@ void EventHandler::handleClientEvent(int client_fd) {
             std::cout << "Datos recibidos del cliente " << client_fd << ": " << partial_messages[client_fd];
             if (authenticated_clients.find(client_fd) != authenticated_clients.end()) {
                 std::string channel = user_manager.getUserChannel(client_fd);
-                socket_manager.broadcastMessage(partial_messages[client_fd], client_fd, channel); // Eliminado authenticated_clients
+                if (!channel.empty()) {
+                    socket_manager.broadcastMessage(partial_messages[client_fd], client_fd, channel);
+                }
             }
             partial_messages.erase(client_fd);
         } else {
@@ -72,8 +74,14 @@ void EventHandler::handleClientEvent(int client_fd) {
                 } else if (!line.empty()){
                     // Manejar mensajes regulares
                     std::string channel = user_manager.getUserChannel(client_fd);
-                    std::cout << "Canal del usuario " << client_fd << ": " << channel << std::endl;
-                    socket_manager.broadcastMessage(line, client_fd, channel); // Eliminado authenticated_clients
+
+                    // Verifica si el usuario está en algún canal
+                    if (channel.empty()) {
+                        socket_manager.sendMessageToClient(client_fd, "No puedes enviar mensajes si no estás en un canal.\n");
+                    } else {
+                        std::cout << "Canal del usuario " << client_fd << ": " << channel << std::endl;
+                        socket_manager.broadcastMessage(line, client_fd, channel);
+                    }
                 }
             }
         } else {
