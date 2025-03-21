@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:11 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/20 18:22:47 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/19 18:25:44 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,22 +17,21 @@
 #include <cstdlib> // para exit
 #include <cerrno> // Añadido para errno
 
-SocketManager::SocketManager(int port, const std::string& password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, Authentication& authentication)
+SocketManager::SocketManager(int port, const std::string& password)
     : server_fd(socket(AF_INET, SOCK_STREAM, 0)),
       epoll_fd(epoll_create1(0)),
-      port(port), // Inicializar port
-      password(password), // Inicializar password
-      server_password(password), // Inicializar server_password
-      client_addresses(),
-      nicknames(nicknames),
-      authenticated_clients(authenticated_clients),
+      server_password(password),
+      client_addresses(), // Inicializar client_addresses
+      nicknames(), // Inicializar nicknames
+      authenticated_clients(), // Inicializar authenticated_clients
+      command_handler(password, nicknames, authenticated_clients, user_manager, *this), // Inicializar command_handler
+      user_manager(usernames), // Inicializar user_manager
       usernames(), // Inicializar usernames
-      partial_messages(),
-      command_handler(password, nicknames, authenticated_clients, user_manager, *this, authentication),
-      user_manager(user_manager),
-      event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients)
+      partial_messages(), // Inicializar partial_messages
+      event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients) // Inicializar event_handler
 {
     // 1. Crear el socket del servidor
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         std::cerr << "Error al crear el socket del servidor." << std::endl;
         exit(1);
@@ -64,6 +63,7 @@ SocketManager::SocketManager(int port, const std::string& password, std::map<int
     }
 
     // 5. Crear la instancia de epoll
+    epoll_fd = epoll_create1(0);
     if (epoll_fd == -1) {
         std::cerr << "Error al crear la instancia de epoll." << std::endl;
         exit(1);

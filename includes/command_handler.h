@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:35 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/20 17:57:58 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/19 16:56:08 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,8 @@
 #include <set>
 #include "user_manager.h"
 #include "channel_manager.h"
-#include "authentication.h"
 
-
+// Declaración adelantada de SocketManager
 class SocketManager;
 
 enum CommandType
@@ -41,7 +40,7 @@ extern std::map<std::string, Channel> channels;
 class CommandHandler
 {
     public:
-        CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager, Authentication& authentication); // Actualizar la declaración del constructor
+        CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager); // Añadir SocketManager al constructor
         void handleCommand(int client_fd, const std::string& command);
         void kickUserFromChannel(int client_fd, const std::string& userName, const std::string& channelName);
         void listChannels(int client_fd);
@@ -57,7 +56,8 @@ class CommandHandler
         std::map<std::string, CommandType> commandMap;
         UserManager& user_manager;
         SocketManager& socket_manager;
-        Authentication& authentication;
+        
+        
 };
 
 #endif

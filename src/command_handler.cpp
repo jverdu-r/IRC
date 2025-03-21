@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/20 17:57:19 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/19 18:46:13 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,17 +19,17 @@
 
 std::map<std::string, Channel> channels;
 
-CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager, Authentication& authentication)
-    : server_password(server_password), nicknames(nicknames), authenticated_clients(authenticated_clients), user_manager(user_manager), socket_manager(socket_manager), authentication(authentication) // Corregir la inicialización
-{
-    commandMap["/PASS"] = CMD_PASS;
-    commandMap["/NICK"] = CMD_NICK;
-    commandMap["/USER"] = CMD_USER;
-    commandMap["/JOIN"] = CMD_JOIN;
-    commandMap["/PART"] = CMD_PART;
-    commandMap["/NAMES"] = CMD_NAMES;
-    commandMap["/LIST"] = CMD_LIST;
-    commandMap["/KICK"] = CMD_KICK;
+CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager)
+    : server_password(server_password), nicknames(nicknames), authenticated_clients(authenticated_clients), user_manager(user_manager), socket_manager(socket_manager)
+    {
+    commandMap["PASS"] = CMD_PASS;
+    commandMap["NICK"] = CMD_NICK;
+    commandMap["USER"] = CMD_USER;
+    commandMap["/JOIN"] = CMD_JOIN; // Nuevo
+    commandMap["/PART"] = CMD_PART; // Nuevo
+    commandMap["/NAMES"] = CMD_NAMES; // Nuevo
+    commandMap["/LIST"] = CMD_LIST; // Nuevo
+    commandMap["/KICK"] = CMD_KICK; // Nuevo
     std::cout << "Contenido de commandMap:" << std::endl;
     for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it) {
         std::cout << "Comando: " << it->first << ", Tipo: " << it->second << std::endl;
@@ -37,50 +37,17 @@ CommandHandler::CommandHandler(const std::string& server_password, std::map<int,
 }
 
 void CommandHandler::handleCommand(int client_fd, const std::string& command) {
-    std::string cmdName;
-    CommandType cmdType = CMD_UNKNOWN;
-
-    if (command.empty() || command[0] != '/') {
-        std::cout << "Comando inválido: " << command << std::endl;
-        return;
-    }
-    size_t cmdEnd = 1;
-    while (cmdEnd < command.length() && (std::isalnum(command[cmdEnd]) || command[cmdEnd] == '_' || command[cmdEnd] == '-')) {
-        cmdEnd++;
-    }
-    cmdName = command.substr(0, cmdEnd);
-    std::string cmdArgs;
-    if (cmdEnd < command.length()) {
-        cmdArgs = command.substr(cmdEnd + 1);
-        // Eliminar espacios en blanco iniciales de cmdArgs
-        size_t firstNonSpace = cmdArgs.find_first_not_of(" \t\r\n");
-        if (firstNonSpace != std::string::npos) {
-            cmdArgs = cmdArgs.substr(firstNonSpace);
-        } else {
-            cmdArgs = ""; // cmdArgs solo contiene espacios en blanco
-        }
-    } else {
-        cmdArgs = ""; // No hay argumentos
-    }
+    size_t spacePos = command.find(' ');
+    std::string cmdName = command.substr(0, spacePos);
+    std::string cmdArgs = (spacePos != std::string::npos) ? command.substr(spacePos + 1) : "";
 
     std::cout << "cmdName: " << cmdName << std::endl;
-    std::cout << "cmdArgs: " << cmdArgs << std::endl;
 
-    std::cout << "cmdName antes de la comparación: " << cmdName << std::endl;
+    CommandType cmdType = CMD_UNKNOWN;
     if (commandMap.find(cmdName) != commandMap.end()) {
         cmdType = commandMap[cmdName];
     }
-    std::cout << "cmdType antes del switch: " << cmdType << std::endl;
-    std::cout << "cmdName.length(): " << cmdName.length() << std::endl;
-    if (!cmdName.empty()) {
-        std::cout << "cmdName.back(): " << (int)cmdName[cmdName.length() - 1] << std::endl;
-    }
 
-    if (!this->authentication.isUserAuthenticated(client_fd) && cmdType != CMD_PASS) {
-        socket_manager.sendMessageToClient(client_fd, "Por favor autenticate antes de ejecutar comandos.\n");
-        return;
-    }
-    
     switch (cmdType) {
         case CMD_PASS: {
             std::string client_password = cmdArgs.substr(0, cmdArgs.find('\n'));
@@ -144,34 +111,18 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command) {
 }
 
 void CommandHandler::joinChannel(int client_fd, const std::string& channelName) {
-    std::cout << "Inicio de joinChannel, canal: " << channelName << std::endl;
-    std::cout << "Nombre del canal recibido: " << channelName << std::endl;
     if (channels.find(channelName) == channels.end()) {
         Channel newChannel;
         newChannel.name = channelName;
         newChannel.users.insert(client_fd);
         newChannel.creator = client_fd;
         channels[channelName] = newChannel;
-        std::cout << "El canal no existe, creándolo." << std::endl;
     } else {
         channels[channelName].users.insert(client_fd);
-        std::cout << "El canal existe, uniéndose." << std::endl;
     }
-    user_manager.setUserChannel(client_fd, channelName);
+    user_manager.setUserChannel(client_fd, channelName); // Añadir esta línea
     socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
-
-    std::cout << "Tamaño del mapa channels después de la unión: " << channels.size() << std::endl;
-    for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
-        std::cout << "Canal en channels: " << it->first << std::endl;
-    }
-
-    std::string channelList = "Canales disponibles: #";
-    for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
-        std::cout << "Añadiendo canal a channelList: " << it->first << std::endl;
-        channelList += it->first + ", #";
-    }
 }
-
 
 void CommandHandler::partChannel(int client_fd, const std::string& channelName) {
     if (channels.find(channelName) != channels.end()) {
@@ -207,16 +158,10 @@ void CommandHandler::listChannels(int client_fd) {
     }
     std::cout << "Fin de primer bucle for" << std::endl;
 
-    std::string channelList = "Canales disponibles: ";
+    std::string channelList = "Canales disponibles: #";
     std::map<std::string, Channel>::const_iterator it;
-    size_t i = 0; // Cambiar int a size_t
-
     for (it = channels.begin(); it != channels.end(); ++it) {
-        channelList += "#" + it->first;
-        if (i < channels.size() - 1) {
-            channelList += ", ";
-        }
-        i++;
+        channelList += it->first + ", #";
     }
     channelList += "\r\n";
     std::cout << "Fin de segundo bucle for" << std::endl;
