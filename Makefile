@@ -1,4 +1,3 @@
-CC = g++
 CFLAGS = -std=c++98 -Wall -Wextra -Werror
 TARGET = irc_server
 
@@ -17,6 +16,8 @@ OBJECTS = $(OBJ_DIR)/main.o \
             $(OBJ_DIR)/user_manager.o \
             $(OBJ_DIR)/event_handler.o
 
+all: $(TARGET)
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -I$(INC_DIR) -c $< -o $@
 
@@ -24,9 +25,7 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET)
-
-all: $(TARGET)
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) -lstdc++ # Modificado
 
 clean:
 	rm -rf $(OBJ_DIR)

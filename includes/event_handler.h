@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:32 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/19 16:01:33 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 11:59:43 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,11 @@ private:
     std::map<int, std::string>& partial_messages;
     std::map<int, sockaddr_in>& client_addresses;
     std::set<int>& authenticated_clients;
+
+    void handleClientDisconnect(int client_fd, int bytes_received); // Agregado
+    void processReceivedData(int client_fd, const std::string& received_data); // Agregado
+    void processLine(int client_fd, const std::string& line); // Agregado
+    void assignDefaultUsername(int client_fd); // Agregado
 };
 
 #endif

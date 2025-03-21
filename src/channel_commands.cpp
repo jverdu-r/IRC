@@ -30,12 +30,12 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
 }
 
 void CommandHandler::listChannels(int client_fd) {
-    std::cout << "Inicio de listChannels" << std::endl;
-    std::cout << "Contenido del mapa channels:" << std::endl;
-    for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
+    //std::cout << "Inicio de listChannels" << std::endl;
+    //std::cout << "Contenido del mapa channels:" << std::endl;
+    /*for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
         std::cout << "Canal: " << it->first << std::endl;
-    }
-    std::cout << "Fin de primer bucle for" << std::endl;
+    }*/
+    //std::cout << "Fin de primer bucle for" << std::endl;
 
     std::string channelList = "Canales disponibles: #";
     std::map<std::string, Channel>::const_iterator it;
@@ -49,14 +49,14 @@ void CommandHandler::listChannels(int client_fd) {
     }
 
     channelList += "\r\n";
-    std::cout << "Fin de segundo bucle for" << std::endl;
+    /*std::cout << "Fin de segundo bucle for" << std::endl;
     std::cout << "Lista de canales: " << channelList;
     std::cout << "Tamaño de channels: " << channels.size() << std::endl;
     std::cout << "Tamaño de channelList: " << channelList.length() << std::endl;
-    std::cout << "Llamando a sendMessageToClient" << std::endl;
+    std::cout << "Llamando a sendMessageToClient" << std::endl;*/
     socket_manager.sendMessageToClient(client_fd, channelList);
-    std::cout << "sendMessageToClient llamado" << std::endl;
-    std::cout << "Fin de listChannels" << std::endl;
+    /*std::cout << "sendMessageToClient llamado" << std::endl;
+    std::cout << "Fin de listChannels" << std::endl;*/
 }
 
 void CommandHandler::joinChannel(int client_fd, const std::string& channelName) {
