@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/19 18:46:13 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 10:47:01 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,9 +22,9 @@ std::map<std::string, Channel> channels;
 CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager)
     : server_password(server_password), nicknames(nicknames), authenticated_clients(authenticated_clients), user_manager(user_manager), socket_manager(socket_manager)
     {
-    commandMap["PASS"] = CMD_PASS;
-    commandMap["NICK"] = CMD_NICK;
-    commandMap["USER"] = CMD_USER;
+    commandMap["/PASS"] = CMD_PASS;
+    commandMap["/NICK"] = CMD_NICK;
+    commandMap["/USER"] = CMD_USER;
     commandMap["/JOIN"] = CMD_JOIN; // Nuevo
     commandMap["/PART"] = CMD_PART; // Nuevo
     commandMap["/NAMES"] = CMD_NAMES; // Nuevo
@@ -37,8 +37,13 @@ CommandHandler::CommandHandler(const std::string& server_password, std::map<int,
 }
 
 void CommandHandler::handleCommand(int client_fd, const std::string& command) {
+    if (command.empty() || command[0] != '/') {
+        socket_manager.sendMessageToClient(client_fd, "Error: Los comandos deben comenzar con '/'.\n");
+        return;
+    }
+
     size_t spacePos = command.find(' ');
-    std::string cmdName = command.substr(0, spacePos);
+    std::string cmdName = (spacePos != std::string::npos) ? command.substr(0, spacePos) : command; // Modificado
     std::string cmdArgs = (spacePos != std::string::npos) ? command.substr(spacePos + 1) : "";
 
     std::cout << "cmdName: " << cmdName << std::endl;
@@ -163,6 +168,12 @@ void CommandHandler::listChannels(int client_fd) {
     for (it = channels.begin(); it != channels.end(); ++it) {
         channelList += it->first + ", #";
     }
+
+    // Eliminar el último ", #" si la lista no está vacía
+    if (!channels.empty()) {
+        channelList.erase(channelList.length() - 2, 2); // Elimina ", #"
+    }
+
     channelList += "\r\n";
     std::cout << "Fin de segundo bucle for" << std::endl;
     std::cout << "Lista de canales: " << channelList;
