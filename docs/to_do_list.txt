@@ -3,7 +3,7 @@ Próximos Pasos
 
 	-Implementa el manejo del username.
 
-2.Canales: #### JORGE ESTA EN ELLO ####
+2.Canales: #### HECHO ####
 
 	-Crea una estructura para representar los canales (nombre, miembros, operadores, etc.).
 	-Implementa los comandos JOIN y PART.
