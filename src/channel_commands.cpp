@@ -81,6 +81,7 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
         newChannel.users.insert(client_fd);
         newChannel.creator = client_fd;
         channels[channelName] = newChannel;
+        
     }
     else
     {

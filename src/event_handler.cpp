@@ -79,38 +79,35 @@ void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
     }
 }
 
-void EventHandler::processReceivedData(int client_fd, const std::string& received_data)
-{
+void EventHandler::processReceivedData(int client_fd, const std::string& received_data) {
     std::string data = received_data;
 
-    if (partial_messages.find(client_fd) != partial_messages.end())
-    {
+    if (partial_messages.find(client_fd) != partial_messages.end()) {
         data = partial_messages[client_fd] + data;
         partial_messages.erase(client_fd);
     }
 
-    size_t newline_pos = data.find('\n');
-
-    if (newline_pos != std::string::npos)
-    {
-        //std::cout << "Datos recibidos del cliente " << client_fd << ": " << data;
-        size_t start_pos = 0;
-        while (start_pos < data.length())
-        {
-            size_t end_pos = data.find('\n', start_pos);
-            if (end_pos == std::string::npos)
-            {
-                break;
-            }
-            std::string line = data.substr(start_pos, end_pos - start_pos);
-            start_pos = end_pos + 1;
-
-            processLine(client_fd, line);
+    size_t pos = 0;
+    while (pos < data.length()) {
+        size_t newline_pos = data.find("\r\n", pos); // Usar cadena en lugar de constante de carácter de múltiples caracteres.
+        if (newline_pos == std::string::npos) {
+            newline_pos = data.find('\n', pos);
         }
+
+        if (newline_pos == std::string::npos) {
+            break;
+        }
+
+        std::string line = data.substr(pos, newline_pos - pos);
+        pos = newline_pos + ((data[newline_pos] == '\r') ? 2 : 1); // Avanzar correctamente
+
+        processLine(client_fd, line);
     }
-    else
-    {
-        partial_messages[client_fd] = data;
+
+    if (pos < data.length()) {
+        partial_messages[client_fd] = data.substr(pos);
+    } else {
+        partial_messages.erase(client_fd);
     }
 }
 

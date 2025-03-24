@@ -6,7 +6,7 @@
 /*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:11 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 16:48:34 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/21 20:24:06 by jverdu-r         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,7 +99,8 @@ void SocketManager::run()
 
     while (true) {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-        if (num_events == -1) {
+        if (num_events == -1)
+        {
             std::cerr << "Error en epoll_wait: " << strerror(errno) << std::endl;
             break;
         }
