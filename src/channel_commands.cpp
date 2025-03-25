@@ -139,3 +139,72 @@ void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs
     std::string channelName = cmdArgs.substr(spacePosKick + 1, cmdArgs.find('\n'));
     kickUserFromChannel(client_fd, userName, channelName);
 }
+
+void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdArgs)
+{
+    size_t spacePosPriv = cmdArgs.find(' ');
+    if (spacePosPriv == std::string::npos)
+    {
+        socket_manager.sendMessageToClient(client_fd, "Uso: /PRIVMSG <usuario|#canal> <mensaje>\n");
+        return;
+    }
+
+    std::string target = cmdArgs.substr(0, spacePosPriv);
+    std::string message = cmdArgs.substr(spacePosPriv + 1);
+
+    if (target.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "Falta Usuario o Canal. Uso: /PRIVMSG <usuario|#canal> <mensaje>\n");
+        return;
+    }
+    if (message.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "Falta Mensaje. Uso: /PRIVMSG <usuario|#canal> <mensaje>\n");
+        return;
+    }
+
+    std::string sender_nick = nicknames[client_fd];
+    std::string sender_user = user_manager.getUserName(client_fd);
+    std::string formatted_message = "[PRIVMSG " + sender_user + "!" + sender_nick + "] " + message + "\n";
+
+    if (target[0] == '#')
+    {
+        // Enviar al canal
+        const std::map<std::string, Channel>& channels = getChannels();
+        if (channels.find(target) != channels.end())
+        {
+            const std::set<int>& users = channels.at(target).users;
+            for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it)
+            {
+                if (*it != client_fd)
+                    socket_manager.sendMessageToClient(*it, formatted_message);
+            }
+        }
+        else
+        {
+            socket_manager.sendMessageToClient(client_fd, "El canal " + target + " no existe.\n");
+        }
+    }
+    else
+    {
+        // Enviar a un usuario
+        int target_fd = -1;
+        for (std::map<int, std::string>::const_iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+        {
+            if (it->second == target)
+            {
+                target_fd = it->first;
+                break;
+            }
+        }
+
+        if (target_fd != -1)
+        {
+            socket_manager.sendMessageToClient(target_fd, formatted_message);
+        }
+        else
+        {
+            socket_manager.sendMessageToClient(client_fd, "Usuario " + target + " no encontrado.\n");
+        }
+    }
+}

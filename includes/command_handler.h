@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   command_handler.h                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:35 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 11:16:52 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/25 11:52:13 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,8 @@ enum CommandType
     CMD_NAMES,
     CMD_LIST,
     CMD_KICK,
-    CMD_UNKNOWN
+    CMD_UNKNOWN,
+	CMD_PRIVMSG
 };
 
 extern std::map<std::string, Channel> channels;
@@ -51,6 +52,7 @@ class CommandHandler
         void handleKickCommand(int client_fd, const std::string& cmdArgs);
         void handleUserCommand(int client_fd, const std::string& cmdArgs);
         void handleNickCommand(int client_fd, const std::string& cmdArgs);
+		void handlePrivMsgCommand(int client_fd, const std::string& cmdArgs);
         const std::map<std::string, Channel>& getChannels() const;
 
     private:

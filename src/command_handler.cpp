@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   command_handler.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 16:42:11 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/03/25 18:21:44 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ CommandHandler::CommandHandler(const std::string& server_password,
     commandMap["/NAMES"] = CMD_NAMES;
     commandMap["/LIST"] = CMD_LIST;
     commandMap["/KICK"] = CMD_KICK;
+	commandMap["/PRIVMSG"] = CMD_PRIVMSG;
     std::cout << "Contenido de commandMap:" << std::endl;
     for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it) {
         std::cout << "Comando: " << it->first << ", Tipo: " << it->second << std::endl;
@@ -107,6 +108,11 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command)
             handleKickCommand(client_fd, cmdArgs);
             break;
         }
+        case CMD_PRIVMSG:
+		{
+			handlePrivMsgCommand(client_fd, cmdArgs);
+			break;
+		}
         default:
             break;
     }
