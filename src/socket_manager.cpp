@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:11 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 13:14:10 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/02 23:19:37 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,14 +46,14 @@
 */
 SocketManager::SocketManager(int port, const std::string& password) :
 	server_password(password),
+    authenticated_clients(),
     client_addresses(),
     nicknames(),
-    authenticated_clients(),
-    command_handler(password, nicknames, authenticated_clients, user_manager, *this),
-    user_manager(usernames),
     usernames(),
     partial_messages(),
-    event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients)
+    user_manager(usernames),
+    event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients),
+    command_handler(password, nicknames, authenticated_clients, user_manager, *this)
 {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1)
@@ -201,7 +201,7 @@ void SocketManager::acceptConnection()
     client_addresses[client_fd] = client_address;
     nicknames[client_fd] = "Invitado";
     std::cout << "Nuevo cliente conectado: " << client_fd << std::endl;
-    std::string welcome_message = "Bienvenido al servidor IRC. Por favor, introduce la contraseña con el comando \\PASS.\n";	// Se crea el mensaje de bienvenida
+    std::string welcome_message = "Bienvenido al servidor IRC. Por favor, introduce la contraseña con el comando /PASS.\n";	// Se crea el mensaje de bienvenida
     send(client_fd, welcome_message.c_str(), welcome_message.length(), 0);
 }
 

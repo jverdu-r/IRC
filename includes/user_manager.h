@@ -6,12 +6,11 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:24 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 19:40:11 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/02 23:11:43 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef USER_MANAGER_H
-#define USER_MANAGER_H
+#pragma	once
 
 #include <string>
 #include <map>
@@ -32,5 +31,3 @@ class UserManager
 		std::map<int, std::string>&	usernames;
 		std::map<int, std::string>	user_channels;
 };
-
-#endif

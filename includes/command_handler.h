@@ -6,12 +6,11 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:35 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 16:42:09 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/02 23:16:50 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef COMMAND_HANDLER_H
-#define COMMAND_HANDLER_H
+#pragma once
 
 #include <string>
 #include <map>
@@ -20,6 +19,7 @@
 #include "channel_manager.h"
 
 class SocketManager; // Declaración adelantada de SocketManager
+extern std::map<std::string, Channel> channels;
 
 enum CommandType
 {
@@ -34,8 +34,6 @@ enum CommandType
     CMD_UNKNOWN,
 	CMD_PRIVMSG
 };
-
-extern std::map<std::string, Channel> channels;
 
 class CommandHandler
 {
@@ -67,5 +65,3 @@ class CommandHandler
         
         
 };
-
-#endif

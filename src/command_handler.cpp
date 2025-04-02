@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 16:54:19 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/02 23:17:22 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+std::map<std::string, Channel> channels;
 
 /*	Constructor de CommandHandler.
 	Se inicializan los atributos server_password, nicknames, authenticated_clients, user_manager y socket_manager.
@@ -26,8 +27,8 @@
 CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames,
 std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager) :
 	server_password(server_password),
-    nicknames(nicknames),
 	authenticated_clients(authenticated_clients),
+    nicknames(nicknames),
     user_manager(user_manager),
     socket_manager(socket_manager)
 {

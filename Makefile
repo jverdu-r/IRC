@@ -25,7 +25,7 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) -lstdc++ # Modificado
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) -lstdc++
 
 clean:
 	rm -rf $(OBJ_DIR)

@@ -6,12 +6,11 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:38 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 19:39:19 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/02 23:11:31 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CHANNEL_MANAGER_H
-#define CHANNEL_MANAGER_H
+#pragma once
 
 #include <map>
 #include <set>
@@ -28,5 +27,3 @@ struct Channel
     std::set<int> users;
     int creator;
 };
-
-#endif

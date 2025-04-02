@@ -16,11 +16,13 @@
 
 EventHandler::EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager,
 std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses, std::set<int>& authenticated_clients) :
-    socket_manager(socket_manager),
-    command_handler(command_handler), user_manager(user_manager),
+    
+    authenticated_clients(authenticated_clients),
     partial_messages(partial_messages),
     client_addresses(client_addresses),
-    authenticated_clients(authenticated_clients)
+	socket_manager(socket_manager),
+    command_handler(command_handler),
+	user_manager(user_manager)
 {
 }
 
