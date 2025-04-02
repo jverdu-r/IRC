@@ -3,6 +3,126 @@
 #include <string>
 #include <set>
 
+/*	Comando /LIST.
+	1.-	Se recorre el mapa de canales y se envía un mensaje al cliente con los nombres de los canales.
+*/
+void CommandHandler::listChannels(int client_fd)
+{
+    std::string channelList = "Canales disponibles:\n#";
+    std::map<std::string, Channel>::const_iterator it;
+    for (it = channels.begin(); it != channels.end(); ++it)
+    {
+        channelList += it->first + "\n#";
+    }
+    if (!channels.empty())
+    {
+        channelList.erase(channelList.length() - 2, 2);
+    }
+	else
+	{
+		channelList += "No hay canales disponibles.";
+	}
+    channelList += "\r\n";
+    socket_manager.sendMessageToClient(client_fd, channelList);
+}
+
+/*	Commando /JOIN.
+	1.-	Se comprueba si el canal no existe.
+		 -	Si no existe, se crea un nuevo canal y se añade el usuario.
+		 -	Si el canal existe, se añade el usuario al canal.
+	2.-	Se actualiza el canal del usuario, y se envía un mensaje al usuario.
+*/
+void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
+{
+    if (channels.find(channelName) == channels.end())
+    {
+        Channel newChannel;
+        newChannel.name = channelName;
+        newChannel.users.insert(client_fd);
+        newChannel.creator = client_fd;
+        channels[channelName] = newChannel;
+        
+    }
+    else
+    {
+        channels[channelName].users.insert(client_fd);
+    }
+    user_manager.setUserChannel(client_fd, channelName);
+    socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
+}
+
+/*	Comando /PART.
+	1.-	Se comprueba si el canal existe.
+		 -	Si existe, se elimina al usuario del canal y se envía un mensaje al usuario.
+		 -	Si el canal queda vacío, se elimina del mapa de canales.
+*/
+void CommandHandler::partChannel(int client_fd, const std::string& channelName)
+{
+    if (channels.find(channelName) != channels.end())
+    {
+        channels[channelName].users.erase(client_fd);
+        socket_manager.sendMessageToClient(client_fd, "Has abandonado el canal " + channelName + ".\n");
+        if (channels[channelName].users.empty())
+        {
+            channels.erase(channelName);
+        }
+    }
+    else
+    {
+        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+    }
+}
+
+/*	Comando /NAMES.
+	1.-	Se comprueba si el canal existe.
+		 -	Si existe, se recorre el conjunto de usuarios del canal y se envía un mensaje al cliente
+			con los nombres de los usuarios.
+		 -	Si no existe, se informa al cliente.
+*/
+void CommandHandler::listUsersInChannel(int client_fd, const std::string& channelName)
+{
+    if (channels.find(channelName) != channels.end())
+    {
+        std::string userList = "Usuarios en " + channelName + ": ";
+        std::set<int>::iterator it;
+        for (it = channels[channelName].users.begin(); it != channels[channelName].users.end(); ++it)
+        {
+            userList += nicknames[*it] + "\n";
+        }
+        socket_manager.sendMessageToClient(client_fd, userList);
+    }
+    else
+    {
+        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+    }
+}
+
+/*	Comando /LIST.
+	1.-	Se devuelve el mapa de canales.
+*/
+const std::map<std::string, Channel>& CommandHandler::getChannels() const
+{
+    return channels;
+}
+
+/*	Comando /KICK.
+	1.-	Se obtiene el nombre de usuario y el nombre del canal.
+	2.-	Se llama a la función kickUserFromChannel().
+*/
+void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs)
+{
+    size_t spacePosKick = cmdArgs.find(' ');
+    std::string userName = cmdArgs.substr(0, spacePosKick);
+    std::string channelName = cmdArgs.substr(spacePosKick + 1, cmdArgs.find('\n'));
+    kickUserFromChannel(client_fd, userName, channelName);
+}
+
+/*	1.-	Primer IF -> Se comprueba si el canal existe.
+	2.-	Segundo IF -> Se comprueba si el usuario que envía el comando es el creador del canal.
+	3.-	Se recorre el mapa de nicknames para encontrar el usuario a expulsar.
+		 -	Si se encuentra, se elimina del canal y se envía un mensaje al usuario expulsado.
+		 -	Si no se encuentra, se informa al usuario que el usuario a expulsar no existe.
+*/
 void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userName, const std::string& channelName)
 {
     if (channels.find(channelName) != channels.end())
@@ -41,105 +161,11 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
     }
 }
 
-void CommandHandler::listChannels(int client_fd)
-{
-    //std::cout << "Inicio de listChannels" << std::endl;
-    //std::cout << "Contenido del mapa channels:" << std::endl;
-    /*for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
-        std::cout << "Canal: " << it->first << std::endl;
-    }*/
-    //std::cout << "Fin de primer bucle for" << std::endl;
-
-    std::string channelList = "Canales disponibles: #";
-    std::map<std::string, Channel>::const_iterator it;
-    for (it = channels.begin(); it != channels.end(); ++it)
-    {
-        channelList += it->first + ", #";
-    }
-    if (!channels.empty())
-    {
-        channelList.erase(channelList.length() - 2, 2);
-    }
-
-    channelList += "\r\n";
-    //std::cout << "Fin de segundo bucle for" << std::endl;
-    //std::cout << "Lista de canales: " << channelList;
-    //std::cout << "Tamaño de channels: " << channels.size() << std::endl;
-    //std::cout << "Tamaño de channelList: " << channelList.length() << std::endl;
-    //std::cout << "Llamando a sendMessageToClient" << std::endl;
-    socket_manager.sendMessageToClient(client_fd, channelList);
-    //std::cout << "sendMessageToClient llamado" << std::endl;
-    //std::cout << "Fin de listChannels" << std::endl;
-}
-
-void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
-{
-    if (channels.find(channelName) == channels.end())
-    {
-        Channel newChannel;
-        newChannel.name = channelName;
-        newChannel.users.insert(client_fd);
-        newChannel.creator = client_fd;
-        channels[channelName] = newChannel;
-        
-    }
-    else
-    {
-        channels[channelName].users.insert(client_fd);
-    }
-    user_manager.setUserChannel(client_fd, channelName);
-    socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
-}
-
-void CommandHandler::partChannel(int client_fd, const std::string& channelName)
-{
-    if (channels.find(channelName) != channels.end())
-    {
-        channels[channelName].users.erase(client_fd);
-        socket_manager.sendMessageToClient(client_fd, "Has abandonado el canal " + channelName + ".\n");
-        if (channels[channelName].users.empty())
-        {
-            channels.erase(channelName);
-        }
-    }
-    else
-    {
-        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
-    }
-}
-
-void CommandHandler::listUsersInChannel(int client_fd, const std::string& channelName)
-{
-    if (channels.find(channelName) != channels.end())
-    {
-        std::string userList = "Usuarios en " + channelName + ": ";
-        std::set<int>::iterator it;
-        for (it = channels[channelName].users.begin(); it != channels[channelName].users.end(); ++it)
-        {
-            userList += nicknames[*it] + " ";
-        }
-        userList += "\n";
-        socket_manager.sendMessageToClient(client_fd, userList);
-    }
-    else
-    {
-        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
-    }
-}
-
-const std::map<std::string, Channel>& CommandHandler::getChannels() const
-{
-    return channels;
-}
-
-void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs)
-{
-    size_t spacePosKick = cmdArgs.find(' ');
-    std::string userName = cmdArgs.substr(0, spacePosKick);
-    std::string channelName = cmdArgs.substr(spacePosKick + 1, cmdArgs.find('\n'));
-    kickUserFromChannel(client_fd, userName, channelName);
-}
-
+/*	Comando /PRIVMSG.
+	1.-	Se obtiene el nombre del usuario o canal y el mensaje.
+	2.-	Si el nombre comienza por #, se envía el mensaje a todos los usuarios del canal.
+	3.-	Si el nombre no comienza por #, se envía el mensaje al usuario.
+*/
 void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdArgs)
 {
     size_t spacePosPriv = cmdArgs.find(' ');
@@ -169,7 +195,6 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
 
     if (target[0] == '#')
     {
-        // Enviar al canal
         const std::map<std::string, Channel>& channels = getChannels();
         if (channels.find(target) != channels.end())
         {
@@ -187,7 +212,6 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
     }
     else
     {
-        // Enviar a un usuario
         int target_fd = -1;
         for (std::map<int, std::string>::const_iterator it = nicknames.begin(); it != nicknames.end(); ++it)
         {

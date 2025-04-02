@@ -14,20 +14,26 @@
 #include <sys/epoll.h>
 
 
-EventHandler::EventHandler(SocketManager& socket_manager,
-    CommandHandler& command_handler,
-    UserManager& user_manager,
-    std::map<int, std::string>& partial_messages,
-    std::map<int, sockaddr_in>& client_addresses,
-    std::set<int>& authenticated_clients)
-    : socket_manager(socket_manager),
+EventHandler::EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager,
+std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses, std::set<int>& authenticated_clients) :
+    socket_manager(socket_manager),
     command_handler(command_handler), user_manager(user_manager),
     partial_messages(partial_messages),
     client_addresses(client_addresses),
-    authenticated_clients(authenticated_clients) {}
+    authenticated_clients(authenticated_clients)
+{
+}
 
-   
-    
+EventHandler::~EventHandler()
+{
+}
+
+/*	Se encarga de gestionar los eventos de los clientes.
+	1.-	Se crea un buffer de 1024 bytes y se inicializa a 0.
+	2.-	Se recibe el mensaje del cliente y se guarda en bytes_received.
+	3.-	Si bytes_received es menor o igual a 0, se llama a handleClientDisconnect().
+	4.-	Si bytes_received es mayor que 0, se llama a processReceivedData().
+*/  
 void EventHandler::handleClientEvent(int client_fd)
 {
     char buffer[1024];
@@ -44,73 +50,97 @@ void EventHandler::handleClientEvent(int client_fd)
     }
 }
 
+/*	Se encarga de gestionar la desconexión de un cliente.
+	 -	Si bytes_received es 0, se informa de que el cliente envió EOF.
+		Si el cliente está autenticado, se obtiene el canal del usuario y se envía el mensaje
+		parcial a todos los usuarios del canal.
+	 -	Si bytes_received es distinto de 0, se informa del error en recv().
+	En cualquier caso:
+	 -	Se elimina el cliente del epoll.
+	 -	Se cierra el socket del cliente.
+	 -	Se eliminan los datos del cliente de los mapas de IPs.
+	 -	Se eliminan los mensajes parciales del cliente.	
+*/
 void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
 {
     if (bytes_received == 0)
-    {
-        //std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
-        if (partial_messages.find(client_fd) != partial_messages.end())
-        {
-            //std::cout << "Datos recibidos del cliente " << client_fd << ": " << partial_messages[client_fd];
-            if (authenticated_clients.find(client_fd) != authenticated_clients.end())
-            {
-                std::string channel = user_manager.getUserChannel(client_fd);
-                if (!channel.empty())
-                {
-                    socket_manager.broadcastMessage(partial_messages[client_fd], client_fd, channel);
-                }
-            }
-            partial_messages.erase(client_fd);
-        }
-        else
-        {
-            epoll_ctl(socket_manager.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
-            close(client_fd);
-            client_addresses.erase(client_fd);
-        }
-    }
-    else
-    {
-        std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
-        epoll_ctl(socket_manager.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
-        close(client_fd);
-        client_addresses.erase(client_fd);
-        partial_messages.erase(client_fd);
-    }
+	{
+		std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
+
+		if (partial_messages.find(client_fd) != partial_messages.end())
+		{
+			if (authenticated_clients.find(client_fd) != authenticated_clients.end())
+			{
+				std::string channel = user_manager.getUserChannel(client_fd);
+				if (!channel.empty())
+				{
+					socket_manager.broadcastMessage(partial_messages[client_fd], client_fd, channel);
+				}
+			}
+		}
+	}
+	else
+	{
+		std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
+	}
+
+	epoll_ctl(socket_manager.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
+	close(client_fd);
+	client_addresses.erase(client_fd);
+	partial_messages.erase(client_fd);
 }
 
-void EventHandler::processReceivedData(int client_fd, const std::string& received_data) {
+/*	Se encarga de procesar los datos recibidos.
+	1.-	Si el cliente tiene mensajes parciales, se concatenan con los datos recibidos.
+	2.-	Se recorre la cadena de datos recibidos y se procesa línea a línea.
+	3.-	Si hay mensajes parciales (tras procesar las líneas, la última puede ser incompleta, por 
+		ejemplo), se guardan en el mapa de mensajes parciales.
+*/
+void EventHandler::processReceivedData(int client_fd, const std::string& received_data)
+{
     std::string data = received_data;
 
-    if (partial_messages.find(client_fd) != partial_messages.end()) {
+    if (partial_messages.find(client_fd) != partial_messages.end())
+	{
         data = partial_messages[client_fd] + data;
         partial_messages.erase(client_fd);
     }
 
     size_t pos = 0;
-    while (pos < data.length()) {
-        size_t newline_pos = data.find("\r\n", pos); // Usar cadena en lugar de constante de carácter de múltiples caracteres.
-        if (newline_pos == std::string::npos) {
+    while (pos < data.length())
+	{
+        size_t newline_pos = data.find("\r\n", pos);
+        if (newline_pos == std::string::npos)
+		{
             newline_pos = data.find('\n', pos);
         }
-
-        if (newline_pos == std::string::npos) {
+        if (newline_pos == std::string::npos)
+		{
             break;
         }
 
         std::string line = data.substr(pos, newline_pos - pos);
-        pos = newline_pos + ((data[newline_pos] == '\r') ? 2 : 1); // Avanzar correctamente
+        pos = newline_pos + ((data[newline_pos] == '\r') ? 2 : 1);
 
         processLine(client_fd, line);
     }
 
-    if (pos < data.length()) {
+    if (pos < data.length())
+	{
         partial_messages[client_fd] = data.substr(pos);
-    } else {
+    }
+	else
+	{
         partial_messages.erase(client_fd);
     }
 }
 
+/*	Se encarga de procesar una línea de datos.
+	1.-	Si el cliente no está autenticado y la línea no comienza con /PASS, se informa al cliente.
+	2.-	Se asigna un nombre de usuario por defecto si no tiene uno.
+	3.-	Si la línea comienza con /, se procesa como un comando.
+	4.-	Si no, se envía el mensaje a todos los usuarios del canal del cliente.
+*/
 void EventHandler::processLine(int client_fd, const std::string& line)
 {
     if (authenticated_clients.find(client_fd) == authenticated_clients.end() && line.find("/PASS") != 0)
@@ -123,7 +153,6 @@ void EventHandler::processLine(int client_fd, const std::string& line)
 
     if (!line.empty() && line[0] == '/')
     {
-        //std::cout << "Comando recibido: " << line << std::endl;
         command_handler.handleCommand(client_fd, line);
     }
     else if (!line.empty())
@@ -135,12 +164,17 @@ void EventHandler::processLine(int client_fd, const std::string& line)
         }
         else
         {
-            //std::cout << "Canal del usuario " << client_fd << ": " << channel << std::endl;
             socket_manager.broadcastMessage(line, client_fd, channel);
         }
     }
 }
 
+/*	Se encarga de asignar un nombre de usuario por defecto al cliente.
+	1.-	Se obtiene el nombre de usuario del cliente.
+	2.-	Si el nombre de usuario está vacío, se asigna un nombre de usuario por defecto.
+	3.-	Se comprueba la unicidad del nombre de usuario.
+	4.-	Se asigna el nombre de usuario y se informa al cliente del nombre de usuario asignado.
+*/
 void EventHandler::assignDefaultUsername(int client_fd)
 {
     if (user_manager.getUserName(client_fd).empty())

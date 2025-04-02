@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   channel_manager.h                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:38 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/19 16:41:54 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/04/02 19:39:19 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,16 @@
 #include <set>
 #include <string>
 
-struct Channel {
+/*	La estructura Channel representa un canal de chat.
+	-	name: nombre del canal.
+	-	users: conjunto de usuarios en el canal.
+	-	creator: usuario creador del canal.
+*/
+struct Channel
+{
     std::string name;
-    std::set<int> users; // Lista de file descriptors de los usuarios en el canal
-    int creator; // File descriptor del usuario que creó el canal
+    std::set<int> users;
+    int creator;
 };
 
 #endif
