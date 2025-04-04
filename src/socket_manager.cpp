@@ -248,3 +248,15 @@ int		SocketManager::getEpollFd()
 { 
 	return epoll_fd;
 }
+
+/*	Devuelve el apodo de un cliente a partir de su descriptor.
+*/
+std::string SocketManager::getNickname(int client_fd) const
+{
+    std::map<int, std::string>::const_iterator it = nicknames.find(client_fd);
+    if (it != nicknames.end())
+    {
+        return it->second;
+    }
+    return "";
+}

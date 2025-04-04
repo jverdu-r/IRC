@@ -35,7 +35,8 @@ enum CommandType
 	CMD_PRIVMSG,
 	CMD_MODE,
 	CMD_INVITE,
-	CMD_TOPIC
+	CMD_TOPIC,
+	CMD_WHOIS
 
 };
 
@@ -60,7 +61,8 @@ class CommandHandler
 		void 									handleInviteCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleTopicCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleModeCommand(int client_fd, const std::string& cmdArgs);
-        const std::map<std::string, Channel>&	getChannels() const;
+        void 									handleWhoisCommand(int client_fd, const std::string& cmdArgs);
+		const std::map<std::string, Channel>&	getChannels() const;
 
     private:
         std::string							server_password;

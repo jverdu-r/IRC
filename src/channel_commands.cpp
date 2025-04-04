@@ -49,7 +49,7 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
     {
         channels[channelName].users.insert(client_fd);
     }
-    user_manager.setUserChannel(client_fd, channelName);
+    user_manager.addUserChannel(client_fd, channelName);
     socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
 }
 
@@ -63,6 +63,7 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
     if (channels.find(channelName) != channels.end())
     {
         channels[channelName].users.erase(client_fd);
+		user_manager.removeUserChannel(client_fd, channelName);
         socket_manager.sendMessageToClient(client_fd, "Has abandonado el canal " + channelName + ".\n");
         if (channels[channelName].users.empty())
         {
@@ -362,7 +363,7 @@ void CommandHandler::handleInviteCommand(int client_fd, const std::string& cmdAr
     }
 
     channel.users.insert(target_fd);
-    user_manager.setUserChannel(target_fd, channelName);
+    user_manager.addUserChannel(target_fd, channelName);
     socket_manager.sendMessageToClient(client_fd, "Has invitado a " + targetUser + " al canal " + channelName + ".\n");
     socket_manager.sendMessageToClient(target_fd, "Has sido invitado al canal " + channelName + ".\n");
 }
@@ -411,4 +412,41 @@ void CommandHandler::handleTopicCommand(int client_fd, const std::string& cmdArg
             socket_manager.sendMessageToClient(*it, "El tema del canal " + channelName + " ha sido cambiado a: " + newTopic + "\n");
         }
     }
+}
+
+/*	Comando WHOIS.
+	1.-	Se obtiene el nombre de usuario o apodo.
+	2.-	Se buscan los canales asociados al nombre de usuario y apodo.
+	3.-	Si no se encuentran canales, se informa al cliente.
+	4.-	Si se encuentran canales, se envía un mensaje al cliente con los nombres de los canales.
+*/
+void CommandHandler::handleWhoisCommand(int client_fd, const std::string& cmdArgs)
+{
+    if (cmdArgs.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "Uso: /WHOIS <username|nickname>\n");
+        return;
+    }
+
+    std::set<std::string> channelsByUsername = user_manager.findChannelsByUsername(cmdArgs);
+    std::set<std::string> channelsByNickname = user_manager.findChannelsByNickname(cmdArgs, nicknames);
+
+    std::set<std::string> resultChannels;
+    resultChannels.insert(channelsByUsername.begin(), channelsByUsername.end());
+    resultChannels.insert(channelsByNickname.begin(), channelsByNickname.end());
+
+    if (resultChannels.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "No se encontraron canales para " + cmdArgs + ".\n");
+        return;
+    }
+
+    std::string response = "Canales de " + cmdArgs + ": ";
+    for (std::set<std::string>::iterator it = resultChannels.begin(); it != resultChannels.end(); ++it)
+    {
+        response += *it + "\n";
+    }
+    response += "\n";
+
+    socket_manager.sendMessageToClient(client_fd, response);
 }

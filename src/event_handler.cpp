@@ -68,19 +68,22 @@ void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
     if (bytes_received == 0)
 	{
 		std::cout << "Cliente " << client_fd << " envió EOF." << std::endl;
-
-		if (partial_messages.find(client_fd) != partial_messages.end())
+	
+		if (authenticated_clients.find(client_fd) != authenticated_clients.end())
 		{
-			if (authenticated_clients.find(client_fd) != authenticated_clients.end())
+			std::set<std::string> channels = user_manager.getUserChannels(client_fd);
+			if (!channels.empty())
 			{
-				std::string channel = user_manager.getUserChannel(client_fd);
-				if (!channel.empty())
+				std::string nickname = socket_manager.getNickname(client_fd);
+				std::string disconnectNotice = "Usuario desconectado: " + user_manager.getUserName(client_fd) + " (" + nickname + ")\n";
+				for (std::set<std::string>::iterator it = channels.begin(); it != channels.end(); ++it)
 				{
-					socket_manager.broadcastMessage(partial_messages[client_fd], client_fd, channel);
+					socket_manager.broadcastMessage(disconnectNotice, client_fd, *it);
 				}
 			}
 		}
 	}
+
 	else
 	{
 		std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
@@ -157,18 +160,10 @@ void EventHandler::processLine(int client_fd, const std::string& line)
     {
         command_handler.handleCommand(client_fd, line);
     }
-    else if (!line.empty())
-    {
-        std::string channel = user_manager.getUserChannel(client_fd);
-        if (channel.empty())
-        {
-            socket_manager.sendMessageToClient(client_fd, "No puedes enviar mensajes si no estás en un canal.\n");
-        }
-        else
-        {
-            socket_manager.broadcastMessage(line, client_fd, channel);
-        }
-    }
+	else if (!line.empty())
+	{
+		socket_manager.sendMessageToClient(client_fd, "Debes usar /PRIVMSG <canal> <mensaje> para enviar mensajes.\n");
+	}
 }
 
 /*	Se encarga de asignar un nombre de usuario por defecto al cliente.

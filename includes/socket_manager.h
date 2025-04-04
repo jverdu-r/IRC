@@ -32,11 +32,12 @@ public:
     SocketManager(int port, const std::string& password);
     ~SocketManager();
 	
-    void	run();
-    void	acceptConnection();
-    void	broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName);
-    void	sendMessageToClient(int client_fd, const std::string& message);
-    int		getEpollFd();
+    void		run();
+    void		acceptConnection();
+    void		broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName);
+    void		sendMessageToClient(int client_fd, const std::string& message);
+    int			getEpollFd();
+	std::string	getNickname(int client_fd) const;
 
 private:
     int							server_fd;
