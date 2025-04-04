@@ -472,7 +472,7 @@ void CommandHandler::handleWhoisCommand(int client_fd, const std::string& cmdArg
         return;
     }
 
-    std::string response = "Canales de " + cmdArgs + ": ";
+    std::string response = "Canales de " + cmdArgs + ": \n";
     for (std::set<std::string>::iterator it = resultChannels.begin(); it != resultChannels.end(); ++it)
     {
         response += *it + "\n";
