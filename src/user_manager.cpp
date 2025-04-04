@@ -129,3 +129,29 @@ std::set<std::string> UserManager::findChannelsByNickname(const std::string& nic
     }
     return result;
 }
+
+/*	Configura el canal activo de un cliente.
+*/
+void UserManager::setActiveChannel(int client_fd, const std::string& channel)
+{
+    active_channel[client_fd] = channel;
+}
+
+/* 	Devuelve el canal activo de un cliente.
+*/
+std::string UserManager::getActiveChannel(int client_fd) const
+{
+    std::map<int, std::string>::const_iterator it = active_channel.find(client_fd);
+    if (it != active_channel.end())
+    {
+        return it->second;
+    }
+    return "";
+}
+
+/*	Elimina el canal activo de un cliente.
+*/
+void UserManager::removeActiveChannel(int client_fd)
+{
+    active_channel.erase(client_fd);
+}

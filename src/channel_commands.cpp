@@ -6,25 +6,45 @@
 #include <sstream>
 
 /*	Comando /LIST.
-	1.-	Se recorre el mapa de canales y se envía un mensaje al cliente con los nombres de los canales.
+	Se listan los canales en losque está el cliente y se envía un mensaje al cliente con la lista.
 */
 void CommandHandler::listChannels(int client_fd)
 {
-    std::string channelList = "Canales disponibles:\n#";
-    std::map<std::string, Channel>::const_iterator it;
-    for (it = channels.begin(); it != channels.end(); ++it)
+    std::string channelList = "Canales disponibles:\n";
+    std::set<std::string> userChannels = user_manager.getUserChannels(client_fd);
+    std::string activeChannel = user_manager.getActiveChannel(client_fd);
+
+    if (channels.empty())
     {
-        channelList += it->first + "\n#";
+        channelList += "No estás en ningún canal.\n";
     }
-    if (!channels.empty())
+    else
     {
-        channelList.erase(channelList.length() - 2, 2);
+        for (std::map<std::string, Channel>::const_iterator it = channels.begin(); it != channels.end(); ++it)
+        {
+            const std::string& channelName = it->first;
+            const Channel& channel = it->second;
+
+            channelList += "# " + channelName;
+            if (userChannels.find(channelName) != userChannels.end())
+            {
+                channelList += " (Estás dentro)";
+                if (channelName == activeChannel)
+                {
+                    channelList += " - Activo!!";
+                }
+            }
+            std::stringstream ss;
+			ss << " — " << channel.users.size() << " usuarios";
+			channelList += ss.str();
+            if (!channel.topic.empty())
+            {
+                channelList += " — " + channel.topic;
+            }
+            channelList += "\n";
+        }
     }
-	else
-	{
-		channelList += "No hay canales disponibles.";
-	}
-    channelList += "\r\n";
+
     socket_manager.sendMessageToClient(client_fd, channelList);
 }
 
@@ -43,11 +63,12 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
         newChannel.users.insert(client_fd);
         newChannel.creator = client_fd;
         channels[channelName] = newChannel;
-        
+		user_manager.setActiveChannel(client_fd, channelName);
     }
     else
     {
         channels[channelName].users.insert(client_fd);
+		user_manager.setActiveChannel(client_fd, channelName);
     }
     user_manager.addUserChannel(client_fd, channelName);
     socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
@@ -68,6 +89,16 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
         if (channels[channelName].users.empty())
         {
             channels.erase(channelName);
+			if (user_manager.getActiveChannel(client_fd) == channelName)
+			{
+				user_manager.removeActiveChannel(client_fd);
+
+				std::set<std::string> remainingChannels = user_manager.getUserChannels(client_fd);
+				if (!remainingChannels.empty())
+				{
+					user_manager.setActiveChannel(client_fd, *remainingChannels.begin());
+				}
+			}
         }
     }
     else
@@ -449,4 +480,64 @@ void CommandHandler::handleWhoisCommand(int client_fd, const std::string& cmdArg
     response += "\n";
 
     socket_manager.sendMessageToClient(client_fd, response);
+}
+
+/*	Comando WHOAMI.
+	1.-	Se obtienen los canales del usuario.
+	2.-	Si no hay canales, se informa al cliente.
+	3.-	Si hay canales, se envía un mensaje al cliente con los nombres de los canales.
+*/
+void CommandHandler::handleWhoAmICommand(int client_fd, const std::string& cmdArgs)
+{
+    (void)cmdArgs;
+
+    std::set<std::string> userChannels = user_manager.getUserChannels(client_fd);
+    if (userChannels.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "No estás en ningún canal.\n");
+        return;
+    }
+
+    std::string response = "Estás en los siguientes canales:\n";
+    std::string activeChannel = user_manager.getActiveChannel(client_fd);
+    for (std::set<std::string>::iterator it = userChannels.begin(); it != userChannels.end(); ++it)
+    {
+        const std::string& channelName = *it;
+        const Channel& channel = channels[channelName];
+        response += "# " + channelName;
+        if (channelName == activeChannel)
+        {
+            response += " (Activo)";
+        }
+        if (channel.operators.find(client_fd) != channel.operators.end())
+        {
+            response += " (Operador)";
+        }
+        response += "\n";
+    }
+    socket_manager.sendMessageToClient(client_fd, response);
+}
+
+/*	Comando /ACTIVE.
+	1.-	Se obtiene el nombre del canal.
+	2.-	Se comprueba si el usuario está en el canal.
+	3.-	Se establece el canal activo y se envía un mensaje al usuario.
+*/
+void CommandHandler::handleActiveCommand(int client_fd, const std::string& cmdArgs)
+{
+    if (cmdArgs.empty())
+    {
+        socket_manager.sendMessageToClient(client_fd, "Uso: /ACTIVE <canal>\n");
+        return;
+    }
+
+    std::string channelName = cmdArgs;
+    std::set<std::string> userChannels = user_manager.getUserChannels(client_fd);
+    if (userChannels.find(channelName) == userChannels.end())
+    {
+        socket_manager.sendMessageToClient(client_fd, "No estás en el canal " + channelName + ".\n");
+        return;
+    }
+    user_manager.setActiveChannel(client_fd, channelName);
+    socket_manager.sendMessageToClient(client_fd, "Canal activo cambiado a " + channelName + ".\n");
 }

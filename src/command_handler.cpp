@@ -45,7 +45,8 @@ std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& 
 	commandMap["/INVITE"] = CMD_INVITE;
 	commandMap["/TOPIC"] = CMD_TOPIC;
 	commandMap["/WHOIS"] = CMD_WHOIS;
-
+	commandMap["/WHOAMI"] = CMD_WHOAMI;
+	commandMap["/ACTIVE"] = CMD_ACTIVE;
 	
     std::cout << "Contenido de commandMap:" << std::endl;
     for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it)
@@ -152,6 +153,16 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command)
     	{
 			handleWhoisCommand(client_fd, cmdArgs);
     		break;
+		}
+		case CMD_WHOAMI:
+		{
+			handleWhoAmICommand(client_fd, cmdArgs);
+			break;
+		}
+		case CMD_ACTIVE:
+		{
+			handleActiveCommand(client_fd, cmdArgs);
+			break;
 		}
         default:
             break;

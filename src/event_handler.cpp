@@ -162,7 +162,15 @@ void EventHandler::processLine(int client_fd, const std::string& line)
     }
 	else if (!line.empty())
 	{
-		socket_manager.sendMessageToClient(client_fd, "Debes usar /PRIVMSG <canal> <mensaje> para enviar mensajes.\n");
+		std::string activeChannel = user_manager.getActiveChannel(client_fd);
+		if (activeChannel.empty())
+		{
+			socket_manager.sendMessageToClient(client_fd, "No tienes canal activo. Usa /PRIVMSG <canal> <mensaje>.\n");
+		}
+		else
+		{
+			socket_manager.broadcastMessage(line, client_fd, activeChannel);
+		}
 	}
 }
 

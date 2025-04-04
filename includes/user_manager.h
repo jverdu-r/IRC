@@ -33,8 +33,14 @@ class UserManager
 		std::set<std::string>	findChannelsByUsername(const std::string& username) const;
 		std::set<std::string>	findChannelsByNickname(const std::string& nickname, const std::map<int, std::string>& nicknames) const;
 
+		void 					setActiveChannel(int client_fd, const std::string& channel);
+		std::string 			getActiveChannel(int client_fd) const;
+		void 					removeActiveChannel(int client_fd);
+		
+
 	private:
 		std::map<int, std::string>&				usernames;
 		std::map<int, std::set<std::string> >	user_channels;
+		std::map<int, std::string> 				active_channel;
 
 };

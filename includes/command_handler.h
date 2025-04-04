@@ -36,8 +36,9 @@ enum CommandType
 	CMD_MODE,
 	CMD_INVITE,
 	CMD_TOPIC,
-	CMD_WHOIS
-
+	CMD_WHOIS,
+	CMD_WHOAMI,
+	CMD_ACTIVE,
 };
 
 class CommandHandler
@@ -62,6 +63,8 @@ class CommandHandler
 		void 									handleTopicCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleModeCommand(int client_fd, const std::string& cmdArgs);
         void 									handleWhoisCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleWhoAmICommand(int client_fd, const std::string& cmdArgs);
+		void 									handleActiveCommand(int client_fd, const std::string& cmdArgs);
 		const std::map<std::string, Channel>&	getChannels() const;
 
     private:
@@ -71,6 +74,4 @@ class CommandHandler
         std::map<std::string, CommandType>	commandMap;
         UserManager&						user_manager;
         SocketManager&						socket_manager;
-        
-        
 };
