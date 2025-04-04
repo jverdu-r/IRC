@@ -1,7 +1,9 @@
 #include "command_handler.h"
+#include "socket_manager.h"
 #include <iostream>
 #include <string>
 #include <set>
+#include <sstream>
 
 /*	Comando /LIST.
 	1.-	Se recorre el mapa de canales y se envía un mensaje al cliente con los nombres de los canales.
@@ -86,8 +88,15 @@ void CommandHandler::listUsersInChannel(int client_fd, const std::string& channe
         std::string userList = "Usuarios en " + channelName + ": ";
         std::set<int>::iterator it;
         for (it = channels[channelName].users.begin(); it != channels[channelName].users.end(); ++it)
-        {
-            userList += nicknames[*it] + "\n";
+        {    
+			if (channels[channelName].operators.count(*it))
+			{
+				userList += "@" + nicknames[*it] + "\n";
+			}
+			else
+			{
+				userList += nicknames[*it] + "\n";
+			}
         }
         socket_manager.sendMessageToClient(client_fd, userList);
     }
@@ -127,7 +136,7 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
 {
     if (channels.find(channelName) != channels.end())
     {
-        if (channels[channelName].creator == client_fd)
+        if (channels[channelName].creator == client_fd || channels[channelName].operators.count(client_fd))
         {
             int userToKickFd = -1;
             std::map<int, std::string>::const_iterator it;
@@ -229,6 +238,177 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
         else
         {
             socket_manager.sendMessageToClient(client_fd, "Usuario " + target + " no encontrado.\n");
+        }
+    }
+}
+
+/*	Comando /MODE.
+	1.-	Se obtiene el nombre del canal, el modo y el usuario objetivo.
+	2.-	Se comprueba si el canal existe.
+	3.-	Se comprueba si el usuario objetivo existe.
+	4.-	Si el modo es +o, se añade al usuario como operador del canal.
+	5.-	Si el modo es -o, se quita al usuario como operador del canal.
+*/
+void CommandHandler::handleModeCommand(int client_fd, const std::string& cmdArgs)
+{
+    std::istringstream iss(cmdArgs);
+    std::string channelName, mode, targetUser;
+    iss >> channelName >> mode >> targetUser;
+
+    if (channelName.empty() || mode.empty() || targetUser.empty())
+	{
+        socket_manager.sendMessageToClient(client_fd, "Uso: /MODE <canal> <+o|-o> <usuario>\n");
+        return;
+    }
+
+    if (channels.find(channelName) == channels.end())
+	{
+        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+        return;
+    }
+
+    Channel& channel = channels[channelName];
+
+    int target_fd = -1;
+    for (std::map<int, std::string>::iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+	{
+        if (it->second == targetUser)
+		{
+            target_fd = it->first;
+            break;
+        }
+    }
+
+    if (target_fd == -1)
+	{
+        socket_manager.sendMessageToClient(client_fd, "Usuario " + targetUser + " no encontrado.\n");
+        return;
+    }
+
+    if (mode == "+o")
+    {
+        if (channel.creator != client_fd && channel.operators.count(client_fd) == 0)
+        {
+            socket_manager.sendMessageToClient(client_fd, "No tienes permiso para añadir operadores.\n");
+            return;
+        }
+
+        channel.operators.insert(target_fd);
+        socket_manager.sendMessageToClient(client_fd, "Usuario " + targetUser + " ahora es operador del canal " + channelName + ".\n");
+        socket_manager.sendMessageToClient(target_fd, "Has sido asignado como operador del canal " + channelName + ".\n");
+    }
+    else if (mode == "-o")
+    {
+        if (channel.creator != client_fd)
+        {
+            socket_manager.sendMessageToClient(client_fd, "Solo el creador del canal puede quitar operadores.\n");
+            return;
+        }
+
+        channel.operators.erase(target_fd);
+        socket_manager.sendMessageToClient(client_fd, "Usuario " + targetUser + " ha sido removido como operador del canal " + channelName + ".\n");
+        socket_manager.sendMessageToClient(target_fd, "Has sido removido como operador del canal " + channelName + ".\n");
+    }
+    else
+    {
+        socket_manager.sendMessageToClient(client_fd, "Modo desconocido. Uso: /MODE <canal> <+o|-o> <usuario>\n");
+    }
+}
+
+/*	Comando /INVITE.
+	1.-	Se obtiene el nombre del usuario y el nombre del canal.
+	2.-	Se comprueba si el canal existe.
+	3.-	Se comprueba si el cliente tiene permisos para invitar usuarios al canal.
+	4.-	Se busca el fd del usuario objetivo.
+	5.-	Si se encuentra, se añade al canal y se envía un mensaje al usuario invitado.
+*/
+void CommandHandler::handleInviteCommand(int client_fd, const std::string& cmdArgs)
+{
+    size_t spacePos = cmdArgs.find(' ');
+    if (spacePos == std::string::npos)
+	{
+        socket_manager.sendMessageToClient(client_fd, "Uso: /INVITE <usuario> <canal>\n");
+        return;
+    }
+
+    std::string targetUser = cmdArgs.substr(0, spacePos);
+    std::string channelName = cmdArgs.substr(spacePos + 1);
+
+    if (channels.find(channelName) == channels.end())
+	{
+        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+        return;
+    }
+    Channel& channel = channels[channelName];
+    if (channel.creator != client_fd && channel.operators.count(client_fd) == 0)
+	{
+        socket_manager.sendMessageToClient(client_fd, "No tienes permiso para invitar usuarios a este canal.\n");
+        return;
+    }
+
+    int target_fd = -1;
+    for (std::map<int, std::string>::iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+	{
+        if (it->second == targetUser)
+		{
+            target_fd = it->first;
+            break;
+        }
+    }
+    if (target_fd == -1)
+	{
+        socket_manager.sendMessageToClient(client_fd, "Usuario " + targetUser + " no encontrado.\n");
+        return;
+    }
+
+    channel.users.insert(target_fd);
+    user_manager.setUserChannel(target_fd, channelName);
+    socket_manager.sendMessageToClient(client_fd, "Has invitado a " + targetUser + " al canal " + channelName + ".\n");
+    socket_manager.sendMessageToClient(target_fd, "Has sido invitado al canal " + channelName + ".\n");
+}
+
+/*	Comando /TOPIC.
+	1.-	Se obtiene el nombre del canal y el nuevo tema.
+	2.-	Se comprueba si el canal existe.
+	3.-	Si no se especifica un nuevo tema, se muestra el actual.
+	4.-	Se comprueba si el cliente tiene permisos para cambiar el tema.
+	5.-	Se establece el nuevo tema y se envía un mensaje a todos los usuarios del canal.
+*/
+void CommandHandler::handleTopicCommand(int client_fd, const std::string& cmdArgs)
+{
+    size_t spacePos = cmdArgs.find(' ');
+    std::string channelName = cmdArgs.substr(0, spacePos);
+    std::string newTopic = (spacePos != std::string::npos) ? cmdArgs.substr(spacePos + 1) : "";
+
+    if (channels.find(channelName) == channels.end())
+	{
+        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+        return;
+    }
+
+    Channel& channel = channels[channelName];
+    if (newTopic.empty())
+	{
+        if (channel.topic.empty())
+            socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no tiene tema establecido.\n");
+        else
+            socket_manager.sendMessageToClient(client_fd, "Tema actual de " + channelName + ": " + channel.topic + "\n");
+        return;
+    }
+
+    if (channel.creator != client_fd && channel.operators.count(client_fd) == 0)
+	{
+        socket_manager.sendMessageToClient(client_fd, "No tienes permiso para cambiar el tema de este canal.\n");
+        return;
+    }
+
+    channel.topic = newTopic;
+    socket_manager.sendMessageToClient(client_fd, "Tema del canal " + channelName + " cambiado a: " + newTopic + "\n");
+    for (std::set<int>::iterator it = channel.users.begin(); it != channel.users.end(); ++it)
+	{
+        if (*it != client_fd)
+		{
+            socket_manager.sendMessageToClient(*it, "El tema del canal " + channelName + " ha sido cambiado a: " + newTopic + "\n");
         }
     }
 }

@@ -1,4 +1,5 @@
 #include "command_handler.h"
+#include "socket_manager.h"
 #include <unistd.h>
 
 /*	Gestiona el comando /PASS.

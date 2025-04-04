@@ -32,7 +32,11 @@ enum CommandType
     CMD_LIST,
     CMD_KICK,
     CMD_UNKNOWN,
-	CMD_PRIVMSG
+	CMD_PRIVMSG,
+	CMD_MODE,
+	CMD_INVITE,
+	CMD_TOPIC
+
 };
 
 class CommandHandler
@@ -53,6 +57,9 @@ class CommandHandler
         void									handleUserCommand(int client_fd, const std::string& cmdArgs);
         void									handleNickCommand(int client_fd, const std::string& cmdArgs);
 		void									handlePrivMsgCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleInviteCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleTopicCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleModeCommand(int client_fd, const std::string& cmdArgs);
         const std::map<std::string, Channel>&	getChannels() const;
 
     private:

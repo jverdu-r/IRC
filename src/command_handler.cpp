@@ -41,6 +41,10 @@ std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& 
     commandMap["/LIST"] = CMD_LIST;
     commandMap["/KICK"] = CMD_KICK;
 	commandMap["/PRIVMSG"] = CMD_PRIVMSG;
+	commandMap["/MODE"] = CMD_MODE;
+	commandMap["/INVITE"] = CMD_INVITE;
+	commandMap["/TOPIC"] = CMD_TOPIC;
+
 	
     std::cout << "Contenido de commandMap:" << std::endl;
     for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it)
@@ -126,6 +130,21 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command)
         case CMD_PRIVMSG:
 		{
 			handlePrivMsgCommand(client_fd, cmdArgs);
+			break;
+		}
+		case CMD_MODE:
+		{
+			handleModeCommand(client_fd, cmdArgs);
+			break;
+		}
+		case CMD_INVITE:
+		{
+			handleInviteCommand(client_fd, cmdArgs);
+			break;
+		}
+		case CMD_TOPIC:
+		{
+			handleTopicCommand(client_fd, cmdArgs);
 			break;
 		}
         default:

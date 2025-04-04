@@ -23,7 +23,9 @@
 */
 struct Channel
 {
-    std::string name;
-    std::set<int> users;
-    int creator;
+    int 			creator;
+    std::string 	name;
+	std::string 	topic;
+    std::set<int> 	users;
+	std::set<int> 	operators;
 };
