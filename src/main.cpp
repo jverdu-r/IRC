@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:06 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/08 09:32:17 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 17:47:14 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ void* botThread(void*)
 
 
 int main(int argc, char* argv[])
-{	
+{
 	if (argc != 3)
 	{
         std::cerr << "Uso: " << argv[0] << " <puerto> <contraseña>" << std::endl;

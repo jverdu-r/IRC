@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/05 00:00:11 by jolopez-          #+#    #+#             */
-/*   Updated: 2025/04/08 12:42:10 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 19:07:44 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@
 
 int 						sock = 0;
 std::vector<std::string>	known_channels;
-std::string					bot_nick = "HAL9000";
+std::string					bot_nick = "HAL9000 🤖";
 volatile bool 				running = true;
 
 /*	Utilidad para enviar mensajes al servidor */
@@ -126,8 +126,8 @@ void handleMessage(const std::string& message)
 	{
 		std::string canal = cleanMessage(message.substr(pos + 6));
 		sleep(1);
-		sendMessage("/PRIVMSG #" + canal + " ¡Hola a todos! Soy " + bot_nick + " 🤖");
-		sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>, !usuarios, !canales");
+		sendMessage("/PRIVMSG #" + canal + " ¡Hola a todos! Soy " + bot_nick);
+		sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>");
 		std::cout << bot_nick << " dio la bienvenida en el canal: " << canal << std::endl;
 	}
 }
@@ -149,8 +149,8 @@ void handleMessage(const std::string& message)
 		{
 			sleep(1);
 			sendMessage("/PRIVMSG #" + canal + "¡¡" + user + " se ha unido al canal!!");
-			sendMessage("/PRIVMSG #" + canal + " ¡Bienvenido, " + user + "! Soy " + bot_nick + " 🤖");
-			sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>, !usuarios, !canales");
+			sendMessage("/PRIVMSG #" + canal + " ¡Bienvenido, " + user + "! Soy " + bot_nick);
+			sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>");
 		}
 		return;
 	}
@@ -165,82 +165,81 @@ void handleMessage(const std::string& message)
 		return;
 	}
 
-	std::string target = "";
-	bool isPrivate = false;
-
-	// Detectar si es mensaje privado
+	// DContestar mensajes privados
 	size_t privmsgPos = message.find("PRIVMSG ");
 	if (privmsgPos != std::string::npos)
 	{
-		isPrivate = true;
-		
-		size_t senderStart = privmsgPos + 8;
-		size_t senderEnd = message.find('!', senderStart);
+		std::string	private_target = "";
+		size_t		senderStart = privmsgPos + 8;
+		size_t		senderEnd = message.find('!', senderStart);
 		if (senderEnd != std::string::npos)
 		{
-			target = cleanMessage(message.substr(senderStart, senderEnd - senderStart));
+			private_target = cleanMessage(message.substr(senderStart, senderEnd - senderStart));
 		}
-	}
-
-	// Si no es privado, tratamos de detectar si es mensaje de canal
-	if (!isPrivate)
-	{
-		size_t channelPos = message.find('#');
-		if (channelPos != std::string::npos)
+		// Comandos
+		if (message.find("!hora") != std::string::npos)
 		{
-			size_t channelEnd = message.find(' ', channelPos);
-			if (channelEnd != std::string::npos)
-				target = cleanMessage(message.substr(channelPos + 1, channelEnd - channelPos - 1));
+			sendMessage("/PRIVMSG " + private_target + " La hora actual es " + getCurrentTime());
 		}
-	}
-
-	/* Comandos
-	if (message.find("!hora") != std::string::npos)
-	{
-		sendMessage("/PRIVMSG " + target + " La hora actual es " + getCurrentTime());
-	}
-	else if (message.find("!dado") != std::string::npos)
-	{
-		int roll = rand() % 6 + 1;
-		std::stringstream ss;
-		ss << "/PRIVMSG " << target << " Has sacado un " << roll;
-		sendMessage(ss.str());
-	}
-	else if (message.find("!decide") != std::string::npos)
-	{
-		std::vector<std::string> parts = split(message, ' ');
-		if (parts.size() > 2)
+		else if (message.find("!dado") != std::string::npos)
 		{
-			int choice = rand() % (parts.size() - 1) + 1;
-			sendMessage("/PRIVMSG " + target + " Decisión: " + parts[choice]);
+			int roll = rand() % 6 + 1;
+			std::stringstream ss;
+			ss << "/PRIVMSG " << private_target << " Has sacado un " << roll;
+			sendMessage(ss.str());
 		}
-		else
-			sendMessage("/PRIVMSG " + target + " Uso: !decide opción1 opción2 ...");
-	}
-	else if (message.find("!usuarios") != std::string::npos)
-	{
-		sendMessage("/NAMES " + target);
-	}
-	else if (message.find("!canales") != std::string::npos)
-	{
-		if (known_channels.empty())
+		else if (message.find("!decide") != std::string::npos)
 		{
-			sendMessage("/PRIVMSG " + target + " No hay canales disponibles en este momento.");
-		}
-		else
-		{
-			std::ostringstream oss;
-			oss << "Canales disponibles: ";
-			for (size_t i = 0; i < known_channels.size(); ++i)
+			size_t decide_start = message.find("!decide") + 8;
+			std::vector<std::string> parts = split(message.substr(decide_start), ' ');
+			if (parts.size() > 2)
 			{
-				oss << known_channels[i];
-				if (i < known_channels.size() - 1)
-					oss << ", ";
+				int choice = rand() % (parts.size() - 1) + 1;
+				sendMessage("/PRIVMSG " + private_target + " Decisión: " + parts[choice]);
 			}
-			sendMessage("/PRIVMSG " + target + " " + oss.str());
+			else
+				sendMessage("/PRIVMSG " + private_target + " Uso: !decide opción1 opción2 ...");
 		}
 	}
-		*/
+
+	// Contestar mensajes de canal
+	size_t chanmsgPos = message.find("#");
+	if (chanmsgPos != std::string::npos)
+	{
+		std::string	channel_target = "";
+		size_t		end = message.find(" ->");
+		if (end != std::string::npos)
+		{
+			channel_target = message.substr(0, end);
+		}
+		// Comandos
+		if (message.find("!hora") != std::string::npos)
+		{
+			sendMessage("/PRIVMSG " + channel_target + " La hora actual es " + getCurrentTime());
+		}
+		else if (message.find("!dado") != std::string::npos)
+		{
+			int roll = rand() % 6 + 1;
+			std::stringstream ss;
+			ss << "/PRIVMSG " << channel_target << " Has sacado un " << roll;
+			sendMessage(ss.str());
+		}
+		else if (message.find("!decide") != std::string::npos)
+		{
+			std::vector<std::string> parts = split(message, ' ');
+			if (parts.size() > 2)
+			{
+				int choice = rand() % (parts.size() - 1) + 1;
+				sendMessage("/PRIVMSG " + channel_target + " Decisión: " + parts[choice]);
+			}
+			else
+				sendMessage("/PRIVMSG " + channel_target + " Uso: !decide opción1 opción2 ...");
+		}
+		else if (message.find("!usuarios") != std::string::npos)
+		{
+			sendMessage("/NAMES " + channel_target);
+		}
+	}
 }
 
 // Hilo para recibir mensajes del servidor
@@ -311,7 +310,7 @@ void launchBot()
 	// Autenticación
 	sendMessage("/PASS password");
 	sendMessage("/NICK " + bot_nick);
-	sendMessage("/USER bot_HAL9000");
+	sendMessage("/USER bot");
 
 	// Lanzar hilo de recepción
 	pthread_t recv_thread;
