@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jverdu-r <jverdu-r@student.42.fr>          +#+  +:+       +#+        */
+/*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:06 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/03/21 16:45:30 by jverdu-r         ###   ########.fr       */
+/*   Updated: 2025/04/08 17:47:14 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,17 @@
 #include "../includes/command_handler.h"
 #include <iostream>
 #include <cstdlib>
+
+#ifdef BONUS_MODE
+void launchBot();
+
+void* botThread(void*)
+{
+    launchBot();
+    return NULL;
+}
+#endif
+
 
 int main(int argc, char* argv[])
 {
@@ -28,6 +39,12 @@ int main(int argc, char* argv[])
         std::cerr << "Puerto invalido. Debe estar entre 1 y 65535." << std::endl;
         return 1;
     }
+	
+	#ifdef BONUS_MODE
+	pthread_t thread;
+	pthread_create(&thread, NULL, botThread, NULL);
+	pthread_detach(thread);
+	#endif
 
 	std::string password = argv[2];
 

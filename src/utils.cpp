@@ -1,31 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   channel_manager.h                                  :+:      :+:    :+:   */
+/*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/19 16:01:38 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 23:11:31 by jolopez-         ###   ########.fr       */
+/*   Created: 2025/04/08 10:38:29 by jolopez-          #+#    #+#             */
+/*   Updated: 2025/04/08 11:00:23 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#pragma once
+#include "../includes/utils.h"
 
-#include <map>
-#include <set>
-#include <string>
-
-/*	La estructura Channel representa un canal de chat.
-	-	name: nombre del canal.
-	-	users: conjunto de usuarios en el canal.
-	-	creator: usuario creador del canal.
-*/
-struct Channel
+int getClientFdByNickname(const std::map<int, std::string>& nicknames, const std::string& targetNickname)
 {
-    int 			creator;
-    std::string 	name;
-	std::string 	topic;
-    std::set<int> 	users;
-	std::set<int> 	operators;
-};
+    for (std::map<int, std::string>::const_iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+    {
+        if (it->second == targetNickname)
+        {
+            return it->first;
+        }
+    }
+    return -1;
+}
