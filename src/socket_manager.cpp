@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:11 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 23:19:37 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 11:19:55 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ SocketManager::SocketManager(int port, const std::string& password) :
     nicknames(),
     usernames(),
     partial_messages(),
-    user_manager(usernames),
+    user_manager(usernames, *this),
     event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients),
     command_handler(password, nicknames, authenticated_clients, user_manager, *this)
 {
@@ -215,7 +215,7 @@ void SocketManager::broadcastMessage(const std::string& message, int sender_fd, 
 {
     std::string	sender_nickname = nicknames[sender_fd];
     std::string	sender_username = user_manager.getUserName(sender_fd);
-    std::string formatted_message = "#" + channelName + " -> " + sender_username + "!" + sender_nickname + "]: " + message + '\n';
+    std::string formatted_message = "#" + channelName + " -> " + sender_username + "!" + sender_nickname + ": " + message + '\n';
     const std::map<std::string, Channel>& channels = command_handler.getChannels();
 	
     if (channels.find(channelName) != channels.end())
@@ -238,6 +238,10 @@ void SocketManager::broadcastMessage(const std::string& message, int sender_fd, 
 
 void	SocketManager::sendMessageToClient(int client_fd, const std::string& message)
 {
+    std::string	sender_nickname = nicknames[client_fd];
+    std::string	sender_username = user_manager.getUserName(client_fd);
+    std::string formatted_message = sender_username + "!" + sender_nickname + ": " + message + '\n';
+	
     send(client_fd, message.c_str(), message.length(), 0);
 }
 
@@ -259,4 +263,11 @@ std::string SocketManager::getNickname(int client_fd) const
         return it->second;
     }
     return "";
+}
+
+/*	Devuelve el mapa de apodos.
+*/
+const std::map<int, std::string>& SocketManager::getNicknames() const
+{
+    return this->nicknames;
 }

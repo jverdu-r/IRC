@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:00:56 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 23:17:22 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/07 12:30:30 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,15 +44,9 @@ std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& 
 	commandMap["/MODE"] = CMD_MODE;
 	commandMap["/INVITE"] = CMD_INVITE;
 	commandMap["/TOPIC"] = CMD_TOPIC;
-	commandMap["/WHOIS"] = CMD_WHOIS;
-	commandMap["/WHOAMI"] = CMD_WHOAMI;
+	commandMap["/WHEREIS"] = CMD_WHEREIS;
+	commandMap["/WHEREAMI"] = CMD_WHEREAMI;
 	commandMap["/ACTIVE"] = CMD_ACTIVE;
-	
-    std::cout << "Contenido de commandMap:" << std::endl;
-    for (std::map<std::string, CommandType>::const_iterator it = commandMap.begin(); it != commandMap.end(); ++it)
-	{
-        std::cout << "Comando: " << it->first << ", Tipo: " << it->second << std::endl;
-    }
 }
 
 /*	Destructor de CommandHandler.
@@ -149,14 +143,14 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command)
 			handleTopicCommand(client_fd, cmdArgs);
 			break;
 		}
-		case CMD_WHOIS:
+		case CMD_WHEREIS:
     	{
-			handleWhoisCommand(client_fd, cmdArgs);
+			handleWhereIsCommand(client_fd, cmdArgs);
     		break;
 		}
-		case CMD_WHOAMI:
+		case CMD_WHEREAMI:
 		{
-			handleWhoAmICommand(client_fd, cmdArgs);
+			handleWhereAmICommand(client_fd, cmdArgs);
 			break;
 		}
 		case CMD_ACTIVE:

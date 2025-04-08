@@ -1,5 +1,6 @@
 #include "command_handler.h"
 #include "socket_manager.h"
+#include "utils.h"
 #include <iostream>
 #include <string>
 #include <set>
@@ -25,7 +26,7 @@ void CommandHandler::listChannels(int client_fd)
             const std::string& channelName = it->first;
             const Channel& channel = it->second;
 
-            channelList += "# " + channelName;
+            channelList += "#" + channelName;
             if (userChannels.find(channelName) != userChannels.end())
             {
                 channelList += " (Estás dentro)";
@@ -64,6 +65,9 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
         newChannel.creator = client_fd;
         channels[channelName] = newChannel;
 		user_manager.setActiveChannel(client_fd, channelName);
+		#ifdef BONUS_MODE
+		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000"), "Se ha creado el canal " + channelName + "\n");
+		#endif
     }
     else
     {
@@ -71,7 +75,7 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
 		user_manager.setActiveChannel(client_fd, channelName);
     }
     user_manager.addUserChannel(client_fd, channelName);
-    socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + ".\n");
+    socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + "\n");
 }
 
 /*	Comando /PART.
@@ -86,6 +90,9 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
         channels[channelName].users.erase(client_fd);
 		user_manager.removeUserChannel(client_fd, channelName);
         socket_manager.sendMessageToClient(client_fd, "Has abandonado el canal " + channelName + ".\n");
+		#ifdef BONUS_MODE
+		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000"), user_manager.getUserName(client_fd) + " ha abandonado el canal " + channelName + "\n");
+		#endif
         if (channels[channelName].users.empty())
         {
             channels.erase(channelName);
@@ -117,7 +124,7 @@ void CommandHandler::listUsersInChannel(int client_fd, const std::string& channe
 {
     if (channels.find(channelName) != channels.end())
     {
-        std::string userList = "Usuarios en " + channelName + ": ";
+        std::string userList = "Usuarios en " + channelName + ": \n";
         std::set<int>::iterator it;
         for (it = channels[channelName].users.begin(); it != channels[channelName].users.end(); ++it)
         {    
@@ -232,31 +239,41 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
 
     std::string sender_nick = nicknames[client_fd];
     std::string sender_user = user_manager.getUserName(client_fd);
-    std::string formatted_message = "[PRIVMSG " + sender_user + "!" + sender_nick + "] " + message + "\n";
+    std::string formatted_message = "PRIVMSG " + target + " " + sender_user + "!" + sender_nick + " " + message + "\n";
 
     if (target[0] == '#')
     {
+		target = target.substr(1);
         const std::map<std::string, Channel>& channels = getChannels();
         if (channels.find(target) != channels.end())
         {
             const std::set<int>& users = channels.at(target).users;
+			
+		std::cout << "Usuarios en el canal " << target << ": ";
+		for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it)
+		{
+			std::cout << *it << " ";
+		}
+		std::cout << std::endl;
             for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it)
             {
                 if (*it != client_fd)
-                    socket_manager.sendMessageToClient(*it, formatted_message);
+                {
+					socket_manager.sendMessageToClient(*it, formatted_message);
+				}
             }
         }
-        else
-        {
-            socket_manager.sendMessageToClient(client_fd, "El canal " + target + " no existe.\n");
-        }
     }
-    else
+    else if (target[0] != '#')
     {
         int target_fd = -1;
         for (std::map<int, std::string>::const_iterator it = nicknames.begin(); it != nicknames.end(); ++it)
         {
-            if (it->second == target)
+            if (it->second == target.substr(1))
+			{
+				target_fd = it->first;
+				break;
+			}
             {
                 target_fd = it->first;
                 break;
@@ -269,7 +286,7 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
         }
         else
         {
-            socket_manager.sendMessageToClient(client_fd, "Usuario " + target + " no encontrado.\n");
+            socket_manager.sendMessageToClient(client_fd, "Usuario o canal " + target + " no encontrado.\n");
         }
     }
 }
@@ -445,17 +462,17 @@ void CommandHandler::handleTopicCommand(int client_fd, const std::string& cmdArg
     }
 }
 
-/*	Comando WHOIS.
+/*	Comando WHEREIS.
 	1.-	Se obtiene el nombre de usuario o apodo.
 	2.-	Se buscan los canales asociados al nombre de usuario y apodo.
 	3.-	Si no se encuentran canales, se informa al cliente.
 	4.-	Si se encuentran canales, se envía un mensaje al cliente con los nombres de los canales.
 */
-void CommandHandler::handleWhoisCommand(int client_fd, const std::string& cmdArgs)
+void CommandHandler::handleWhereIsCommand(int client_fd, const std::string& cmdArgs)
 {
     if (cmdArgs.empty())
     {
-        socket_manager.sendMessageToClient(client_fd, "Uso: /WHOIS <username|nickname>\n");
+        socket_manager.sendMessageToClient(client_fd, "Uso: /WHEREIS <username|nickname>\n");
         return;
     }
 
@@ -482,12 +499,12 @@ void CommandHandler::handleWhoisCommand(int client_fd, const std::string& cmdArg
     socket_manager.sendMessageToClient(client_fd, response);
 }
 
-/*	Comando WHOAMI.
+/*	Comando WHEREAMI.
 	1.-	Se obtienen los canales del usuario.
 	2.-	Si no hay canales, se informa al cliente.
 	3.-	Si hay canales, se envía un mensaje al cliente con los nombres de los canales.
 */
-void CommandHandler::handleWhoAmICommand(int client_fd, const std::string& cmdArgs)
+void CommandHandler::handleWhereAmICommand(int client_fd, const std::string& cmdArgs)
 {
     (void)cmdArgs;
 

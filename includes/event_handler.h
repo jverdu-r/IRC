@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:32 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 13:19:29 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 10:02:40 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,9 @@ class SocketManager; // Declaración adelantada
 class EventHandler
 {
 public:
-    EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager, std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses, std::set<int>& authenticated_clients);
+    EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager,
+		std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses,
+		std::set<int>& authenticated_clients);
 	~EventHandler();
 	
 	void handleClientEvent(int client_fd);

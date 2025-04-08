@@ -1,5 +1,6 @@
 #include "../includes/event_handler.h"
 #include "../includes/socket_manager.h"
+#include "../includes/utils.h"
 #include <iostream>
 #include <cstring> // Para memset
 #include <unistd.h> // Para recv, close
@@ -12,7 +13,6 @@
 #include <unistd.h>
 #include <cstring>
 #include <sys/epoll.h>
-
 
 EventHandler::EventHandler(SocketManager& socket_manager, CommandHandler& command_handler, UserManager& user_manager,
 std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client_addresses, std::set<int>& authenticated_clients) :

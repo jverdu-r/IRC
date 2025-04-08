@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:35 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 23:16:50 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/06 20:53:10 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,8 @@ enum CommandType
 	CMD_MODE,
 	CMD_INVITE,
 	CMD_TOPIC,
-	CMD_WHOIS,
-	CMD_WHOAMI,
+	CMD_WHEREIS,
+	CMD_WHEREAMI,
 	CMD_ACTIVE,
 };
 
@@ -62,8 +62,8 @@ class CommandHandler
 		void 									handleInviteCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleTopicCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleModeCommand(int client_fd, const std::string& cmdArgs);
-        void 									handleWhoisCommand(int client_fd, const std::string& cmdArgs);
-		void 									handleWhoAmICommand(int client_fd, const std::string& cmdArgs);
+        void 									handleWhereIsCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleWhereAmICommand(int client_fd, const std::string& cmdArgs);
 		void 									handleActiveCommand(int client_fd, const std::string& cmdArgs);
 		const std::map<std::string, Channel>&	getChannels() const;
 

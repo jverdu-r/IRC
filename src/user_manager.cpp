@@ -6,18 +6,22 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:15 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 22:57:20 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 12:10:35 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/user_manager.h"
+#include "../includes/utils.h"
+#include "../includes/socket_manager.h"
 #include <iostream>
+#include <unistd.h>
 
 /*	Constructor de UserManager.
 	Se inicializa el atributo usernames.
 */
-UserManager::UserManager(std::map<int, std::string>& usernames) :
-	usernames(usernames)
+UserManager::UserManager(std::map<int, std::string>& usernames, SocketManager& socket_manager) :
+	usernames(usernames),
+	socket_manager(socket_manager)
 {
 }
 
@@ -63,8 +67,14 @@ bool UserManager::userNameExists(const std::string& username)
 */
 void UserManager::addUserChannel(int client_fd, const std::string& channel)
 {
+	std::string message = "Usuario " + getUserName(client_fd) + " se ha unido al canal " + channel;
+	std::cout << message << std::endl;
+	#ifdef BONUS_MODE					
+	int	bot_id = getClientFdByNickname(socket_manager.getNicknames(), "HAL9000");
+	socket_manager.sendMessageToClient(bot_id, message);
+	#endif
+
     user_channels[client_fd].insert(channel);
-    std::cout << "Usuario " << client_fd << " se ha unido al canal: " << channel << std::endl;
 }
 
 /*	Elimina un canal de un cliente.

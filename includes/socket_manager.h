@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:28 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 13:17:02 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 10:34:50 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,12 +32,13 @@ public:
     SocketManager(int port, const std::string& password);
     ~SocketManager();
 	
-    void		run();
-    void		acceptConnection();
-    void		broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName);
-    void		sendMessageToClient(int client_fd, const std::string& message);
-    int			getEpollFd();
-	std::string	getNickname(int client_fd) const;
+    void								run();
+    void								acceptConnection();
+    void								broadcastMessage(const std::string& message, int sender_fd, const std::string& channelName);
+    void								sendMessageToClient(int client_fd, const std::string& message);
+    int									getEpollFd();
+	std::string							getNickname(int client_fd) const;
+	const std::map<int, std::string>&	getNicknames() const;
 
 private:
     int							server_fd;
@@ -51,4 +52,5 @@ private:
     UserManager					user_manager;
     EventHandler				event_handler;
     CommandHandler				command_handler;
+
 };

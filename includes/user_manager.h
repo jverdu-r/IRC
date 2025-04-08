@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:24 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/02 23:11:43 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 11:18:15 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,12 @@
 #include <map>
 #include <set>
 
+class SocketManager;
+
 class UserManager
 {
 	public:
-		UserManager(std::map<int, std::string>& usernames);
+		UserManager(std::map<int, std::string>& usernames, SocketManager& socket_manager);
 		~UserManager();
 		
 		void 					setUserName(int client_fd, const std::string& username);
@@ -42,5 +44,5 @@ class UserManager
 		std::map<int, std::string>&				usernames;
 		std::map<int, std::set<std::string> >	user_channels;
 		std::map<int, std::string> 				active_channel;
-
+		SocketManager& 							socket_manager;
 };
