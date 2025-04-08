@@ -66,7 +66,7 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
         channels[channelName] = newChannel;
 		user_manager.setActiveChannel(client_fd, channelName);
 		#ifdef BONUS_MODE
-		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000"), "Se ha creado el canal " + channelName + "\n");
+		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000 🤖"), "Se ha creado el canal " + channelName + "\n");
 		#endif
     }
     else
@@ -91,7 +91,7 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
 		user_manager.removeUserChannel(client_fd, channelName);
         socket_manager.sendMessageToClient(client_fd, "Has abandonado el canal " + channelName + ".\n");
 		#ifdef BONUS_MODE
-		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000"), user_manager.getUserName(client_fd) + " ha abandonado el canal " + channelName + "\n");
+		socket_manager.sendMessageToClient(getClientFdByNickname(nicknames, "HAL9000 🤖"), user_manager.getUserName(client_fd) + " ha abandonado el canal " + channelName + "\n");
 		#endif
         if (channels[channelName].users.empty())
         {
@@ -248,13 +248,6 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
         if (channels.find(target) != channels.end())
         {
             const std::set<int>& users = channels.at(target).users;
-			
-		std::cout << "Usuarios en el canal " << target << ": ";
-		for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it)
-		{
-			std::cout << *it << " ";
-		}
-		std::cout << std::endl;
             for (std::set<int>::const_iterator it = users.begin(); it != users.end(); ++it)
             {
                 if (*it != client_fd)

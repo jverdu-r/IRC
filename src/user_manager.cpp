@@ -6,7 +6,7 @@
 /*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/19 16:01:15 by jverdu-r          #+#    #+#             */
-/*   Updated: 2025/04/08 12:10:35 by jolopez-         ###   ########.fr       */
+/*   Updated: 2025/04/08 18:48:47 by jolopez-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,8 +69,8 @@ void UserManager::addUserChannel(int client_fd, const std::string& channel)
 {
 	std::string message = "Usuario " + getUserName(client_fd) + " se ha unido al canal " + channel;
 	std::cout << message << std::endl;
-	#ifdef BONUS_MODE					
-	int	bot_id = getClientFdByNickname(socket_manager.getNicknames(), "HAL9000");
+	#ifdef BONUS_MODE
+	int	bot_id = getClientFdByNickname(socket_manager.getNicknames(), "HAL9000 🤖");
 	socket_manager.sendMessageToClient(bot_id, message);
 	#endif
 

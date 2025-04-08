@@ -6,7 +6,7 @@ SRC_DIR		=	src
 BONUS_DIR	=	src/bonus
 INC_DIR		=	includes
 OBJ_DIR		=	obj
-BONUS_OBJ = $(BONUS_SRC:$(BONUS_DIR)/%.cpp=$(OBJ_DIR)/bonus/%.o)
+BONUS_OBJ	=	$(BONUS_SRC:$(BONUS_DIR)/%.cpp=$(OBJ_DIR)/bonus/%.o)
 
 
 
