@@ -35,6 +35,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <signal.h>
+#include <cctype>
 
 int 						sock = 0;
 std::vector<std::string>	known_channels;
@@ -92,6 +93,29 @@ void signalHandler(int signum)
 
 /*	Manejar mensajes del servidor
 */
+
+std::string extract_command(std::string message)
+{
+    std::istringstream iss(message);
+    std::string comand;
+    int count = 0;
+    std::string result = "";
+
+    while (iss >> comand) {
+        count++;
+        if (count > 3) {
+            result += comand + " ";
+        }
+    }
+
+    // Eliminar el último espacio si la cadena resultante no está vacía
+    if (!result.empty()) {
+        result.resize(result.length() - 1);
+    }
+
+    return result;
+}
+
 void handleMessage(const std::string& message)
 {
 	if (message.find("Se ha creado el canal ") != std::string::npos)
@@ -133,7 +157,8 @@ void handleMessage(const std::string& message)
 }
 	
 	std::string targetChannel = "";
-
+	std::string command = extract_command(message);
+	std::cout << command << ": " << command.length() << std::endl; //------------------------------------------*
 	// Detectar nuevos usuarios que se unen
 	if (message.find("se ha unido al canal") != std::string::npos)
 	{
@@ -172,16 +197,18 @@ void handleMessage(const std::string& message)
 		std::string	private_target = "";
 		size_t		senderStart = privmsgPos + 8;
 		size_t		senderEnd = message.find('!', senderStart);
+
+
 		if (senderEnd != std::string::npos)
 		{
 			private_target = cleanMessage(message.substr(senderStart, senderEnd - senderStart));
 		}
 		// Comandos
-		if (message.find("!hora") != std::string::npos)
+		if (command == "!hora")
 		{
 			sendMessage("/PRIVMSG " + private_target + " La hora actual es " + getCurrentTime());
 		}
-		else if (message.find("!dado") != std::string::npos)
+		else if (command == "!dado")
 		{
 			int roll = rand() % 6 + 1;
 			std::stringstream ss;
@@ -190,20 +217,24 @@ void handleMessage(const std::string& message)
 		}
 		else if (message.find("!decide") != std::string::npos)
 		{
-			size_t decide_start = message.find("!decide") + 8;
-			std::vector<std::string> parts = split(message.substr(decide_start), ' ');
-			if (parts.size() > 2)
+			if (std::isspace(command[7]))
 			{
-				int choice = rand() % (parts.size() - 1) + 1;
-				sendMessage("/PRIVMSG " + private_target + " Decisión: " + parts[choice]);
+				size_t decide_start = message.find("!decide") + 8;
+				std::vector<std::string> parts = split(message.substr(decide_start), ' ');
+				if (parts.size() > 2)
+				{
+					int choice = rand() % (parts.size() - 1) + 1;
+					sendMessage("/PRIVMSG " + private_target + " Decisión: " + parts[choice]);
+				}
+				else
+					sendMessage("/PRIVMSG " + private_target + " Uso: !decide opción1 opción2 ...");
 			}
-			else
-				sendMessage("/PRIVMSG " + private_target + " Uso: !decide opción1 opción2 ...");
 		}
 	}
 
 	// Contestar mensajes de canal
 	size_t chanmsgPos = message.find("#");
+	std::cout << message << ": " << message.length() << std::endl;
 	if (chanmsgPos != std::string::npos)
 	{
 		std::string	channel_target = "";
@@ -213,11 +244,11 @@ void handleMessage(const std::string& message)
 			channel_target = message.substr(0, end);
 		}
 		// Comandos
-		if (message.find("!hora") != std::string::npos)
+		if (command == "!hora")
 		{
 			sendMessage("/PRIVMSG " + channel_target + " La hora actual es " + getCurrentTime());
 		}
-		else if (message.find("!dado") != std::string::npos)
+		else if (command == "!dado")
 		{
 			int roll = rand() % 6 + 1;
 			std::stringstream ss;
@@ -226,14 +257,20 @@ void handleMessage(const std::string& message)
 		}
 		else if (message.find("!decide") != std::string::npos)
 		{
-			std::vector<std::string> parts = split(message, ' ');
-			if (parts.size() > 2)
+			if (std::isspace(command[7]))
 			{
-				int choice = rand() % (parts.size() - 1) + 1;
-				sendMessage("/PRIVMSG " + channel_target + " Decisión: " + parts[choice]);
+				size_t decide_start = message.find("!decide") + 8;
+				std::string options_str = cleanMessage(message.substr(decide_start));
+				std::vector<std::string> parts = split(options_str, ' ');
+				if (parts.size() >= 2 ) // Need at least one option after !decide
+				{
+					int choice = rand() % parts.size(); // Corrected index: 0 to size-1
+					std::string decision = parts[choice];
+					sendMessage("/PRIVMSG " + channel_target + " Decisión: " + decision);
+				}
+				else
+					sendMessage("/PRIVMSG " + channel_target + " Uso: !decide <opción1> <opción2> ...");
 			}
-			else
-				sendMessage("/PRIVMSG " + channel_target + " Uso: !decide opción1 opción2 ...");
 		}
 		else if (message.find("!usuarios") != std::string::npos)
 		{
@@ -266,14 +303,14 @@ void* receiveLoop(void*)
 }
 
 /* Función principal del bot */
-void launchBot()
+void launchBot(int port, std::string pass)
 {
 	srand(time(NULL));
 
 	signal(SIGINT, signalHandler);
 
 	std::string server_ip = "127.0.0.1";
-	int port = 2323;
+	//int port = 2323;
 
 	struct sockaddr_in server_addr;
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -308,7 +345,7 @@ void launchBot()
 	std::cout << "Conectado al servidor IRC\n";
 
 	// Autenticación
-	sendMessage("/PASS password");
+	sendMessage("/PASS " + pass);
 	sendMessage("/NICK " + bot_nick);
 	sendMessage("/USER bot");
 

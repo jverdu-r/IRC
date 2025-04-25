@@ -14,13 +14,23 @@
 #include "../includes/command_handler.h"
 #include <iostream>
 #include <cstdlib>
+#include <pthread.h>
 
 #ifdef BONUS_MODE
-void launchBot();
 
-void* botThread(void*)
+struct BotThreadArgs
 {
-    launchBot();
+    int port;
+	std::string pass;
+};
+
+void launchBot(int port, std::string pass);
+
+void* botThread(void* arg)
+{
+	BotThreadArgs* args = static_cast<BotThreadArgs*>(arg);
+    launchBot(args->port, args->pass);
+    delete args;
     return NULL;
 }
 #endif
@@ -40,15 +50,25 @@ int main(int argc, char* argv[])
         return 1;
     }
 	
+	std::string password = argv[2];
+
 	#ifdef BONUS_MODE
 	pthread_t thread;
-	pthread_create(&thread, NULL, botThread, NULL);
+	BotThreadArgs* threadArgs = new BotThreadArgs;
+	threadArgs->port = port;
+	threadArgs->pass = password;
+	if (pthread_create(&thread, NULL, botThread, threadArgs) != 0) {
+        std::cerr << "Error al crear el hilo del bot." << std::endl;
+        delete threadArgs; // Clean up if thread creation fails
+        return 1;
+    }
+
+	//pthread_create(&thread, NULL, botThread, NULL);
 	pthread_detach(thread);
 	#endif
 
-	std::string password = argv[2];
-
 	SocketManager server(port, password);
 	server.run();
+	
 	return (0);
 }

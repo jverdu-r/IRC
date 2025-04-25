@@ -1,5 +1,5 @@
 CC = c++
-CFLAGS		=	-std=c++98 -Wall -Wextra -Werror
+CFLAGS		=	-std=c++98 -Wall -Wextra -Werror -fsanitize=address -g3
 TARGET		=	irc_server
 
 SRC_DIR		=	src
