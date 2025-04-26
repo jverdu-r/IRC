@@ -23,6 +23,7 @@ UserManager::UserManager(std::map<int, std::string>& usernames, SocketManager& s
 	usernames(usernames),
 	socket_manager(socket_manager)
 {
+    this->socket_manager.sendMessageToClient(0, "Gestor de usuarios inicializado");
 }
 
 /*	Destructor de UserManager.
