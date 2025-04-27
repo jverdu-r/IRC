@@ -25,10 +25,11 @@ std::map<std::string, Channel> channels;
 	Se muestra el contenido de commandMap.
 */
 CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames,
-std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager) :
+ std::map<int, std::string>& usernames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager) :
 	server_password(server_password),
 	authenticated_clients(authenticated_clients),
     nicknames(nicknames),
+    usernames(usernames),
     user_manager(user_manager),
     socket_manager(socket_manager)
 {

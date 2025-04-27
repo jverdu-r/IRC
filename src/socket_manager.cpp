@@ -53,7 +53,7 @@ SocketManager::SocketManager(int port, const std::string& password) :
     partial_messages(),
     user_manager(usernames, *this),
     event_handler(*this, command_handler, user_manager, partial_messages, client_addresses, authenticated_clients),
-    command_handler(password, nicknames, authenticated_clients, user_manager, *this)
+    command_handler(password, nicknames, usernames, authenticated_clients, user_manager, *this)
 {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1)

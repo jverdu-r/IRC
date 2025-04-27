@@ -44,7 +44,7 @@ enum CommandType
 class CommandHandler
 {
     public:
-        CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames,
+        CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames, std::map<int, std::string>& usernames,
 			std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager);
 		~CommandHandler();
 		
@@ -71,6 +71,7 @@ class CommandHandler
         std::string							server_password;
         std::set<int>&						authenticated_clients;
         std::map<int, std::string>&			nicknames;
+        std::map<int, std::string>&			usernames;
         std::map<std::string, CommandType>	commandMap;
         UserManager&						user_manager;
         SocketManager&						socket_manager;

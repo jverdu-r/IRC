@@ -239,7 +239,7 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
 
     std::string sender_nick = nicknames[client_fd];
     std::string sender_user = user_manager.getUserName(client_fd);
-    std::string formatted_message = "PRIVMSG " + target + " " + sender_user + "!" + sender_nick + " " + message + "\n";
+    std::string formatted_message = "PRIVMSG " + sender_user + "!" + sender_nick + " -> " + message + "\n";
 
     if (target[0] == '#')
     {
@@ -260,17 +260,13 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
     else if (target[0] != '#')
     {
         int target_fd = -1;
-        for (std::map<int, std::string>::const_iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+        for (std::map<int, std::string>::const_iterator it = usernames.begin(); it != usernames.end(); ++it)
         {
-            if (it->second == target.substr(1))
+            if (it->second == target)
 			{
 				target_fd = it->first;
 				break;
 			}
-            {
-                target_fd = it->first;
-                break;
-            }
         }
 
         if (target_fd != -1)
