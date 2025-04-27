@@ -179,7 +179,7 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
         {
             int userToKickFd = -1;
             std::map<int, std::string>::const_iterator it;
-            for (it = nicknames.begin(); it != nicknames.end(); ++it)
+            for (it = usernames.begin(); it != usernames.end(); ++it)
             {
                 if (it->second == userName)
                 {
@@ -205,7 +205,7 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
     }
     else
     {
-        socket_manager.sendMessageToClient(client_fd, "El canal " + channelName + " no existe.\n");
+        socket_manager.sendMessageToClient(client_fd, "Uso: /KICK <usuario> <canal>\n");
     }
 }
 
@@ -308,7 +308,7 @@ void CommandHandler::handleModeCommand(int client_fd, const std::string& cmdArgs
     Channel& channel = channels[channelName];
 
     int target_fd = -1;
-    for (std::map<int, std::string>::iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+    for (std::map<int, std::string>::iterator it = usernames.begin(); it != usernames.end(); ++it)
 	{
         if (it->second == targetUser)
 		{
@@ -385,7 +385,7 @@ void CommandHandler::handleInviteCommand(int client_fd, const std::string& cmdAr
     }
 
     int target_fd = -1;
-    for (std::map<int, std::string>::iterator it = nicknames.begin(); it != nicknames.end(); ++it)
+    for (std::map<int, std::string>::iterator it = usernames.begin(); it != usernames.end(); ++it)
 	{
         if (it->second == targetUser)
 		{

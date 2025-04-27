@@ -221,7 +221,7 @@ void handleMessage(const std::string& message)
 			{
 				size_t decide_start = message.find("!decide") + 8;
 				std::vector<std::string> parts = split(message.substr(decide_start), ' ');
-				if (parts.size() > 2)
+				if (parts.size() >= 2)
 				{
 					int choice = rand() % (parts.size() - 1) + 1;
 					sendMessage("/PRIVMSG " + private_target + " Decisión: " + parts[choice]);

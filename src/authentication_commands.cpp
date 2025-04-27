@@ -27,6 +27,7 @@ void CommandHandler::handlePassCommand(int client_fd, const std::string& cmdArgs
 		send(client_fd, "/USER\t\t->\tpara cambiar tu usuario\n", strlen("/USER\t\t->\tpara cambiar tu usuario\n"), 0);
 		send(client_fd, "/JOIN\t\t->\tpara unirte a un canal\n", strlen("/JOIN\t\t->\tpara unirte a un canal\n"), 0);
 		send(client_fd, "/PART\t\t->\tpara salir de un canal\n", strlen("/PART\t\t->\tpara salir de un canal\n"), 0);
+		send(client_fd, "/KICK\t\t->\tpara echar a un usuario de un canal\n", strlen("/KICK\t\t->\tpara echar a un usuario de un canal\n"), 0);
 		send(client_fd, "/NAMES\t\t->\tlista los usuarios de un canal\n", strlen("/NAMES\t\t->\tlista los usuarios de un canal\n"), 0);
 		send(client_fd, "/LIST\t\t->\tlista todos los canales\n", strlen("/LIST\t\t->\tlista todos los canales\n"), 0);
 		send(client_fd, "/PRIVMSG\t->\tenvia un mensaje privado a un canal o usuario\n", strlen("/PRIVMSG\t->\tenvia un mensaje privado a un canal o usuario\n"), 0);
