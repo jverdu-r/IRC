@@ -17,7 +17,7 @@ void CommandHandler::listChannels(int client_fd)
 
     if (channels.empty())
     {
-        channelList += "No estás en ningún canal.\n";
+        channelList += "No hay ningún canal.\n";
     }
     else
     {
@@ -546,4 +546,30 @@ void CommandHandler::handleActiveCommand(int client_fd, const std::string& cmdAr
     }
     user_manager.setActiveChannel(client_fd, channelName);
     socket_manager.sendMessageToClient(client_fd, "Canal activo cambiado a " + channelName + ".\n");
+}
+
+/*	Comando /HELP.
+	1.-	Se obtiene el nombre del canal.
+	2.-	Se comprueba si el usuario está en el canal.
+	3.-	Se establece el canal activo y se envía un mensaje al usuario.
+*/
+void CommandHandler::handleHelpCommand(int client_fd)
+{
+    send(client_fd, "/PASS\t\t->\tintroduce el password\n", strlen("/PASS\t\t->\tintroduce el password\n"), 0);
+    send(client_fd, "/NICK\t\t->\tpara cambiar tu apodo\n", strlen("/NICK\t\t->\tpara cambiar tu apodo\n"), 0);
+    send(client_fd, "/USER\t\t->\tpara cambiar tu usuario\n", strlen("/USER\t\t->\tpara cambiar tu usuario\n"), 0);
+    send(client_fd, "/JOIN\t\t->\tpara unirte a un canal\n", strlen("/JOIN\t\t->\tpara unirte a un canal\n"), 0);
+    send(client_fd, "/PART\t\t->\tpara salir de un canal\n", strlen("/PART\t\t->\tpara salir de un canal\n"), 0);
+    send(client_fd, "/KICK\t\t->\tpara echar a un usuario de un canal\n", strlen("/KICK\t\t->\tpara echar a un usuario de un canal\n"), 0);
+    send(client_fd, "/NAMES\t\t->\tlista los usuarios de un canal\n", strlen("/NAMES\t\t->\tlista los usuarios de un canal\n"), 0);
+    send(client_fd, "/LIST\t\t->\tlista todos los canales\n", strlen("/LIST\t\t->\tlista todos los canales\n"), 0);
+    send(client_fd, "/PRIVMSG\t->\tenvia un mensaje privado a un canal o usuario\n", strlen("/PRIVMSG\t->\tenvia un mensaje privado a un canal o usuario\n"), 0);
+    send(client_fd, "/MODE\t\t->\tda (+o) o retira (-o) permisos de operador\n", strlen("/MODE\t\t->\tda (+o) o retira (-o) permisos de operador\n"), 0);
+    send(client_fd, "/INVITE\t\t->\tinvita a un usuario al canal\n", strlen("/INVITE\t\t->\tinvita a un usuario al canal\n"), 0);
+    send(client_fd, "/TOPIC\t\t->\tcambia la descripción de un canal \n", strlen("/TOPIC\t\t->\tcambia la descripción de un canal \n"), 0);
+    send(client_fd, "/WHEREIS\t->\tlista los canales en los que está un usuario\n", strlen("/WHEREIS\t->\tlista los canales en los que está un usuario\n"), 0);
+    send(client_fd, "/WHEREAMI\t->\tlista los canales en los que estás\n", strlen("/WHEREAMI\t->\tlista los canales en los que estás\n"), 0);
+    send(client_fd, "/ACTIVE\t\t->\tcambia tu canal activo (en el que escribes)\n", strlen("/ACTIVE\t\t->\tcambia tu canal activo (en el que escribes)\n"), 0);
+    send(client_fd, "/HELP\t\t->\tmuestra la tabla de comandos\n", strlen("/HELP\t\t->\tmuestra la tabla de comandos\n"), 0);
+    send(client_fd, " \n", strlen(" \n"), 0);
 }

@@ -48,6 +48,7 @@ CommandHandler::CommandHandler(const std::string& server_password, std::map<int,
 	commandMap["/WHEREIS"] = CMD_WHEREIS;
 	commandMap["/WHEREAMI"] = CMD_WHEREAMI;
 	commandMap["/ACTIVE"] = CMD_ACTIVE;
+	commandMap["/HELP"] = CMD_HELP;
 }
 
 /*	Destructor de CommandHandler.
@@ -157,6 +158,11 @@ void CommandHandler::handleCommand(int client_fd, const std::string& command)
 		case CMD_ACTIVE:
 		{
 			handleActiveCommand(client_fd, cmdArgs);
+			break;
+		}
+		case CMD_HELP:
+		{
+			handleHelpCommand(client_fd);
 			break;
 		}
         default:

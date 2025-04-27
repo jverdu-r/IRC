@@ -215,7 +215,7 @@ void SocketManager::broadcastMessage(const std::string& message, int sender_fd, 
 {
     std::string	sender_nickname = nicknames[sender_fd];
     std::string	sender_username = user_manager.getUserName(sender_fd);
-    std::string formatted_message = "#" + channelName + " -> " + sender_username + "!" + sender_nickname + ": " + message + '\n';
+    std::string formatted_message = "\n#" + channelName + " -> " + sender_username + "!" + sender_nickname + ": " + message + '\n';
     const std::map<std::string, Channel>& channels = command_handler.getChannels();
 	
     if (channels.find(channelName) != channels.end())

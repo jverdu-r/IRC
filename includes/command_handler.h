@@ -39,6 +39,7 @@ enum CommandType
 	CMD_WHEREIS,
 	CMD_WHEREAMI,
 	CMD_ACTIVE,
+    CMD_HELP
 };
 
 class CommandHandler
@@ -65,6 +66,7 @@ class CommandHandler
         void 									handleWhereIsCommand(int client_fd, const std::string& cmdArgs);
 		void 									handleWhereAmICommand(int client_fd, const std::string& cmdArgs);
 		void 									handleActiveCommand(int client_fd, const std::string& cmdArgs);
+		void 									handleHelpCommand(int client_fd);
 		const std::map<std::string, Channel>&	getChannels() const;
 
     private:

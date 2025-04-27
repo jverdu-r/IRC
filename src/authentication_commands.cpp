@@ -37,6 +37,7 @@ void CommandHandler::handlePassCommand(int client_fd, const std::string& cmdArgs
 		send(client_fd, "/WHEREIS\t->\tlista los canales en los que está un usuario\n", strlen("/WHEREIS\t->\tlista los canales en los que está un usuario\n"), 0);
 		send(client_fd, "/WHEREAMI\t->\tlista los canales en los que estás\n", strlen("/WHEREAMI\t->\tlista los canales en los que estás\n"), 0);
 		send(client_fd, "/ACTIVE\t\t->\tcambia tu canal activo (en el que escribes)\n", strlen("/ACTIVE\t\t->\tcambia tu canal activo (en el que escribes)\n"), 0);
+        send(client_fd, "/HELP\t\t->\tmuestra la tabla de comandos\n", strlen("/HELP\t\t->\tmuestra la tabla de comandos\n"), 0);
         send(client_fd, " \n", strlen(" \n"), 0);
     }
     else
