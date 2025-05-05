@@ -10,18 +10,6 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   bot_bonus.cpp                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: jolopez- <jolopez-@student.42madrid>       +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/04/05 00:00:11 by jolopez-          #+#    #+#             */
-/*   Updated: 2025/04/06 23:34:00 by ChatGPT          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -42,14 +30,12 @@ std::vector<std::string>	known_channels;
 std::string					bot_nick = "HAL9000 🤖";
 volatile bool 				running = true;
 
-/*	Utilidad para enviar mensajes al servidor */
 void sendMessage(const std::string& message)
 {
 	std::string formatted = message + "\r\n";
 	send(sock, formatted.c_str(), formatted.length(), 0);
 }
 
-/*	Limpia espacios y saltos de línea de un mensaje */
 std::string cleanMessage(const std::string& msg)
 {
 	size_t first = msg.find_first_not_of(" \n\r\t");
@@ -59,7 +45,6 @@ std::string cleanMessage(const std::string& msg)
 	return msg.substr(first, (last - first + 1));
 }
 
-/*	Divide un string por espacios */
 std::vector<std::string> split(const std::string& s, char delimiter)
 {
 	std::vector<std::string> tokens;
@@ -70,7 +55,6 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 	return tokens;
 }
 
-/*	Devuelve hora actual como string */
 std::string getCurrentTime()
 {
 	time_t now = time(0);
@@ -81,18 +65,12 @@ std::string getCurrentTime()
 	return std::string(buf);
 }
 
-/*	Función para manejar la señal de interrupción (Ctrl+C)
-*/
 void signalHandler(int signum)
 {
     std::cout << "\n[Bot] Señal de interrupción (" << signum << ") recibida. Cerrando bot..." << std::endl;
     running = false;
     close(sock);
 }
-
-
-/*	Manejar mensajes del servidor
-*/
 
 std::string extract_command(std::string message)
 {
@@ -108,7 +86,6 @@ std::string extract_command(std::string message)
         }
     }
 
-    // Eliminar el último espacio si la cadena resultante no está vacía
     if (!result.empty()) {
         result.resize(result.length() - 1);
     }
@@ -144,30 +121,28 @@ void handleMessage(const std::string& message)
 	}
 	
 	if (message.find("Te has unido al canal") != std::string::npos)
-{
-	size_t pos = message.find("canal ");
-	if (pos != std::string::npos)
 	{
-		std::string canal = cleanMessage(message.substr(pos + 6));
-		sleep(1);
-		sendMessage("/PRIVMSG #" + canal + " ¡Hola a todos! Soy " + bot_nick);
-		sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>");
-		std::cout << bot_nick << " dio la bienvenida en el canal: " << canal << std::endl;
+		size_t pos = message.find("canal ");
+		if (pos != std::string::npos)
+		{
+			std::string canal = cleanMessage(message.substr(pos + 6));
+			sleep(1);
+			sendMessage("/PRIVMSG #" + canal + " ¡Hola a todos! Soy " + bot_nick);
+			sendMessage("/PRIVMSG #" + canal + " Comandos disponibles: !hora, !dado, !decide <opciones>");
+			std::cout << bot_nick << " dio la bienvenida en el canal: " << canal << std::endl;
+		}
 	}
-}
 	
 	std::string targetChannel = "";
 	std::string command = extract_command(message);
-	std::cout << command << ": " << command.length() << std::endl; //------------------------------------------*
-	// Detectar nuevos usuarios que se unen
+	std::cout << command << ": " << command.length() << std::endl;
+	
 	if (message.find("se ha unido al canal") != std::string::npos)
 	{
-		// Extraer usuario
 		size_t user_start = message.find("Usuario ") + 8;
 		size_t user_end = message.find("se ha unido al canal");
 		std::string user = cleanMessage(message.substr(user_start, user_end - user_start));
 
-		// Extraer canal
 		std::string canal = cleanMessage(message.substr(message.find("al canal ") + 9));
 
 		if (!canal.empty())
@@ -180,7 +155,6 @@ void handleMessage(const std::string& message)
 		return;
 	}
 
-	// Detectar desconexiones de usuarios
 	if (message.find("ha abandonado el canal") != std::string::npos)
 	{
 		size_t pos = message.find(' ');
@@ -190,7 +164,6 @@ void handleMessage(const std::string& message)
 		return;
 	}
 
-	// DContestar mensajes privados
 	size_t privmsgPos = message.find("PRIVMSG ");
 	if (privmsgPos != std::string::npos)
 	{
@@ -203,7 +176,7 @@ void handleMessage(const std::string& message)
 		{
 			private_target = cleanMessage(message.substr(senderStart, senderEnd - senderStart));
 		}
-		// Comandos
+	
 		if (command == "!hora")
 		{
 			sendMessage("/PRIVMSG " + private_target + " La hora actual es " + getCurrentTime());
@@ -232,18 +205,16 @@ void handleMessage(const std::string& message)
 		}
 	}
 
-	// Contestar mensajes de canal
 	size_t chanmsgPos = message.find("#");
-	std::cout << message << ": " << message.length() << std::endl;
 	if (chanmsgPos != std::string::npos)
 	{
 		std::string	channel_target = "";
 		size_t		end = message.find(" ->");
 		if (end != std::string::npos)
 		{
-			channel_target = message.substr(0, end);
+			channel_target = message.substr(1, end);
 		}
-		// Comandos
+	
 		if (command == "!hora")
 		{
 			sendMessage("/PRIVMSG " + channel_target + " La hora actual es " + getCurrentTime());
@@ -262,9 +233,9 @@ void handleMessage(const std::string& message)
 				size_t decide_start = message.find("!decide") + 8;
 				std::string options_str = cleanMessage(message.substr(decide_start));
 				std::vector<std::string> parts = split(options_str, ' ');
-				if (parts.size() >= 2 ) // Need at least one option after !decide
+				if (parts.size() >= 2 )
 				{
-					int choice = rand() % parts.size(); // Corrected index: 0 to size-1
+					int choice = rand() % parts.size();
 					std::string decision = parts[choice];
 					sendMessage("/PRIVMSG " + channel_target + " Decisión: " + decision);
 				}
@@ -279,7 +250,6 @@ void handleMessage(const std::string& message)
 	}
 }
 
-// Hilo para recibir mensajes del servidor
 void* receiveLoop(void*)
 {
     char buffer[1024];
@@ -302,7 +272,6 @@ void* receiveLoop(void*)
     return NULL;
 }
 
-/* Función principal del bot */
 void launchBot(int port, std::string pass)
 {
 	srand(time(NULL));
@@ -310,7 +279,6 @@ void launchBot(int port, std::string pass)
 	signal(SIGINT, signalHandler);
 
 	std::string server_ip = "127.0.0.1";
-	//int port = 2323;
 
 	struct sockaddr_in server_addr;
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -344,16 +312,13 @@ void launchBot(int port, std::string pass)
 	
 	std::cout << "Conectado al servidor IRC\n";
 
-	// Autenticación
 	sendMessage("/PASS " + pass);
 	sendMessage("/NICK " + bot_nick);
 	sendMessage("/USER bot");
 
-	// Lanzar hilo de recepción
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, receiveLoop, NULL);
 
-	// Esperar que terminen los hilos
 	pthread_join(recv_thread, NULL);
 
 	std::cout << "[Bot] Cerrando bot limpio." << std::endl;

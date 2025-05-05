@@ -20,7 +20,7 @@
 #include "command_handler.h"
 #include "user_manager.h"
 
-class SocketManager; // Declaración adelantada
+class SocketManager;
 
 class EventHandler
 {

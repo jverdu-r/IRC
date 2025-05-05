@@ -18,7 +18,7 @@
 #include "user_manager.h"
 #include "channel_manager.h"
 
-class SocketManager; // Declaración adelantada de SocketManager
+class SocketManager;
 extern std::map<std::string, Channel> channels;
 
 enum CommandType
@@ -39,7 +39,7 @@ enum CommandType
 	CMD_WHEREIS,
 	CMD_WHEREAMI,
 	CMD_ACTIVE,
-    CMD_HELP
+    CMD_HELP,
 };
 
 class CommandHandler

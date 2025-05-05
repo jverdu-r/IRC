@@ -2,9 +2,9 @@
 #include "../includes/socket_manager.h"
 #include "../includes/utils.h"
 #include <iostream>
-#include <cstring> // Para memset
-#include <unistd.h> // Para recv, close
-#include <cerrno> // Para errno
+#include <cstring>
+#include <unistd.h>
+#include <cerrno>
 #include <sstream>
 #include "event_handler.h"
 #include <iostream>
@@ -29,13 +29,7 @@ std::map<int, std::string>& partial_messages, std::map<int, sockaddr_in>& client
 EventHandler::~EventHandler()
 {
 }
-
-/*	Se encarga de gestionar los eventos de los clientes.
-	1.-	Se crea un buffer de 1024 bytes y se inicializa a 0.
-	2.-	Se recibe el mensaje del cliente y se guarda en bytes_received.
-	3.-	Si bytes_received es menor o igual a 0, se llama a handleClientDisconnect().
-	4.-	Si bytes_received es mayor que 0, se llama a processReceivedData().
-*/  
+ 
 void EventHandler::handleClientEvent(int client_fd)
 {
     char buffer[1024];
@@ -52,17 +46,6 @@ void EventHandler::handleClientEvent(int client_fd)
     }
 }
 
-/*	Se encarga de gestionar la desconexión de un cliente.
-	 -	Si bytes_received es 0, se informa de que el cliente envió EOF.
-		Si el cliente está autenticado, se obtiene el canal del usuario y se envía el mensaje
-		parcial a todos los usuarios del canal.
-	 -	Si bytes_received es distinto de 0, se informa del error en recv().
-	En cualquier caso:
-	 -	Se elimina el cliente del epoll.
-	 -	Se cierra el socket del cliente.
-	 -	Se eliminan los datos del cliente de los mapas de IPs.
-	 -	Se eliminan los mensajes parciales del cliente.	
-*/
 void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
 {
     if (bytes_received == 0)
@@ -83,10 +66,16 @@ void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
 			}
 		}
 	}
-
 	else
 	{
-		std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            return;
+        }
+        else
+        {
+		    std::cerr << "Error en recv() para cliente " << client_fd << ": " << strerror(errno) << std::endl;
+        }
 	}
 
 	epoll_ctl(socket_manager.getEpollFd(), EPOLL_CTL_DEL, client_fd, NULL);
@@ -95,12 +84,6 @@ void EventHandler::handleClientDisconnect(int client_fd, int bytes_received)
 	partial_messages.erase(client_fd);
 }
 
-/*	Se encarga de procesar los datos recibidos.
-	1.-	Si el cliente tiene mensajes parciales, se concatenan con los datos recibidos.
-	2.-	Se recorre la cadena de datos recibidos y se procesa línea a línea.
-	3.-	Si hay mensajes parciales (tras procesar las líneas, la última puede ser incompleta, por 
-		ejemplo), se guardan en el mapa de mensajes parciales.
-*/
 void EventHandler::processReceivedData(int client_fd, const std::string& received_data)
 {
     std::string data = received_data;
@@ -140,12 +123,6 @@ void EventHandler::processReceivedData(int client_fd, const std::string& receive
     }
 }
 
-/*	Se encarga de procesar una línea de datos.
-	1.-	Si el cliente no está autenticado y la línea no comienza con /PASS, se informa al cliente.
-	2.-	Se asigna un nombre de usuario por defecto si no tiene uno.
-	3.-	Si la línea comienza con /, se procesa como un comando.
-	4.-	Si no, se envía el mensaje a todos los usuarios del canal del cliente.
-*/
 void EventHandler::processLine(int client_fd, const std::string& line)
 {
     if (authenticated_clients.find(client_fd) == authenticated_clients.end() && line.find("/PASS") != 0)
@@ -163,6 +140,7 @@ void EventHandler::processLine(int client_fd, const std::string& line)
 	else if (!line.empty())
 	{
 		std::string activeChannel = user_manager.getActiveChannel(client_fd);
+        
 		if (activeChannel.empty())
 		{
 			socket_manager.sendMessageToClient(client_fd, "No tienes canal activo. Usa /PRIVMSG <canal> <mensaje>.\n");
@@ -174,12 +152,6 @@ void EventHandler::processLine(int client_fd, const std::string& line)
 	}
 }
 
-/*	Se encarga de asignar un nombre de usuario por defecto al cliente.
-	1.-	Se obtiene el nombre de usuario del cliente.
-	2.-	Si el nombre de usuario está vacío, se asigna un nombre de usuario por defecto.
-	3.-	Se comprueba la unicidad del nombre de usuario.
-	4.-	Se asigna el nombre de usuario y se informa al cliente del nombre de usuario asignado.
-*/
 void EventHandler::assignDefaultUsername(int client_fd)
 {
     if (user_manager.getUserName(client_fd).empty())

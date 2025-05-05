@@ -19,11 +19,6 @@
 
 std::map<std::string, Channel> channels;
 
-/*	Constructor de CommandHandler.
-	Se inicializan los atributos server_password, nicknames, authenticated_clients, user_manager y socket_manager.
-	Se rellena el mapa commandMap con los comandos y su correspondiente tipo.
-	Se muestra el contenido de commandMap.
-*/
 CommandHandler::CommandHandler(const std::string& server_password, std::map<int, std::string>& nicknames,
  std::map<int, std::string>& usernames, std::set<int>& authenticated_clients, UserManager& user_manager, SocketManager& socket_manager) :
 	server_password(server_password),
@@ -51,18 +46,10 @@ CommandHandler::CommandHandler(const std::string& server_password, std::map<int,
 	commandMap["/HELP"] = CMD_HELP;
 }
 
-/*	Destructor de CommandHandler.
-*/
 CommandHandler::~CommandHandler()
 {
 }
 
-/*	Se encarga de procesar un comando.
-	1.-	Se comprueba si el comando está vacío o no comienza con '/' (doble seguridad, ya viene comprobado).
-	2.-	Se obtiene el nombre del comando y sus argumentos.
-	3.-	Se comprueba si el comando está en el mapa commandMap.
-	4.-	Se llama a la función correspondiente según el tipo de comando.
-*/
 void CommandHandler::handleCommand(int client_fd, const std::string& command)
 {
     if (command.empty() || command[0] != '/')

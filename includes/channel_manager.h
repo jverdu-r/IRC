@@ -16,11 +16,6 @@
 #include <set>
 #include <string>
 
-/*	La estructura Channel representa un canal de chat.
-	-	name: nombre del canal.
-	-	users: conjunto de usuarios en el canal.
-	-	creator: usuario creador del canal.
-*/
 struct Channel
 {
     int 			creator;

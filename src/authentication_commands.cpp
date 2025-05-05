@@ -3,11 +3,6 @@
 #include <unistd.h>
 #include <string.h>
 
-/*	Gestiona el comando /PASS.
-	1.-	Se extrae la contraseña del mensaje.
-	2.-	Se comprueba si la contraseña es correcta, y se envía un mensaje al cliente según el resultado.
-		Se cierra la conexión si la contraseña es incorrecta.
-*/
 void CommandHandler::handlePassCommand(int client_fd, const std::string& cmdArgs)
 {
     std::string client_password = cmdArgs.substr(0, cmdArgs.find('\n'));
@@ -47,11 +42,6 @@ void CommandHandler::handlePassCommand(int client_fd, const std::string& cmdArgs
     }
 }
 
-/*	Se gestiona el comando /NICK, es decirt, la solicitud de cambio de apodo de usuario.
-	1.-	Se extrae el apodo del mensaje.
-	2.-	Se comprueba si el apodo ya está en uso, y se envía un mensaje al cliente
-		según el resultado.
-*/
 void CommandHandler::handleNickCommand(int client_fd, const std::string& cmdArgs)
 {
     if (authenticated_clients.find(client_fd) != authenticated_clients.end())
@@ -66,11 +56,6 @@ void CommandHandler::handleNickCommand(int client_fd, const std::string& cmdArgs
     }
 }
 
-/*	Se gestiona el comando /USER, es decir, la solicitud de cambio de nombre de usuario.
-	1.-	Se extrae el nombre de usuario del mensaje.
-	2.-	Se comprueba si el nombre de usuario ya está en uso, y se envía un mensaje al cliente
-		según el resultado.
-*/
 void CommandHandler::handleUserCommand(int client_fd, const std::string& cmdArgs)
 {
     if (authenticated_clients.find(client_fd) != authenticated_clients.end())

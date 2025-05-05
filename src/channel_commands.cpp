@@ -6,9 +6,6 @@
 #include <set>
 #include <sstream>
 
-/*	Comando /LIST.
-	Se listan los canales en losque está el cliente y se envía un mensaje al cliente con la lista.
-*/
 void CommandHandler::listChannels(int client_fd)
 {
     std::string channelList = "Canales disponibles:\n";
@@ -49,12 +46,6 @@ void CommandHandler::listChannels(int client_fd)
     socket_manager.sendMessageToClient(client_fd, channelList);
 }
 
-/*	Commando /JOIN.
-	1.-	Se comprueba si el canal no existe.
-		 -	Si no existe, se crea un nuevo canal y se añade el usuario.
-		 -	Si el canal existe, se añade el usuario al canal.
-	2.-	Se actualiza el canal del usuario, y se envía un mensaje al usuario.
-*/
 void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
 {
     if (channels.find(channelName) == channels.end())
@@ -78,11 +69,6 @@ void CommandHandler::joinChannel(int client_fd, const std::string& channelName)
     socket_manager.sendMessageToClient(client_fd, "Te has unido al canal " + channelName + "\n");
 }
 
-/*	Comando /PART.
-	1.-	Se comprueba si el canal existe.
-		 -	Si existe, se elimina al usuario del canal y se envía un mensaje al usuario.
-		 -	Si el canal queda vacío, se elimina del mapa de canales.
-*/
 void CommandHandler::partChannel(int client_fd, const std::string& channelName)
 {
     if (channels.find(channelName) != channels.end())
@@ -98,13 +84,34 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
             channels.erase(channelName);
 			if (user_manager.getActiveChannel(client_fd) == channelName)
 			{
-				user_manager.removeActiveChannel(client_fd);
 
 				std::set<std::string> remainingChannels = user_manager.getUserChannels(client_fd);
 				if (!remainingChannels.empty())
 				{
 					user_manager.setActiveChannel(client_fd, *remainingChannels.begin());
+                    socket_manager.sendMessageToClient(client_fd, "El canal activo pasa a ser: " + *remainingChannels.begin() + "\n");
 				}
+                else
+                {
+				    user_manager.removeActiveChannel(client_fd);
+                }
+			}
+        }
+        else
+        {
+			if (user_manager.getActiveChannel(client_fd) == channelName)
+			{
+
+				std::set<std::string> remainingChannels = user_manager.getUserChannels(client_fd);
+				if (!remainingChannels.empty())
+				{
+					user_manager.setActiveChannel(client_fd, *remainingChannels.begin());
+                    socket_manager.sendMessageToClient(client_fd, "El canal activo pasa a ser: " + *remainingChannels.begin() + "\n");
+				}
+                else
+                {
+				    user_manager.removeActiveChannel(client_fd);
+                }
 			}
         }
     }
@@ -114,12 +121,6 @@ void CommandHandler::partChannel(int client_fd, const std::string& channelName)
     }
 }
 
-/*	Comando /NAMES.
-	1.-	Se comprueba si el canal existe.
-		 -	Si existe, se recorre el conjunto de usuarios del canal y se envía un mensaje al cliente
-			con los nombres de los usuarios.
-		 -	Si no existe, se informa al cliente.
-*/
 void CommandHandler::listUsersInChannel(int client_fd, const std::string& channelName)
 {
     if (channels.find(channelName) != channels.end())
@@ -145,18 +146,11 @@ void CommandHandler::listUsersInChannel(int client_fd, const std::string& channe
     }
 }
 
-/*	Comando /LIST.
-	1.-	Se devuelve el mapa de canales.
-*/
 const std::map<std::string, Channel>& CommandHandler::getChannels() const
 {
     return channels;
 }
 
-/*	Comando /KICK.
-	1.-	Se obtiene el nombre de usuario y el nombre del canal.
-	2.-	Se llama a la función kickUserFromChannel().
-*/
 void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs)
 {
     size_t spacePosKick = cmdArgs.find(' ');
@@ -165,12 +159,6 @@ void CommandHandler::handleKickCommand(int client_fd, const std::string& cmdArgs
     kickUserFromChannel(client_fd, userName, channelName);
 }
 
-/*	1.-	Primer IF -> Se comprueba si el canal existe.
-	2.-	Segundo IF -> Se comprueba si el usuario que envía el comando es el creador del canal.
-	3.-	Se recorre el mapa de nicknames para encontrar el usuario a expulsar.
-		 -	Si se encuentra, se elimina del canal y se envía un mensaje al usuario expulsado.
-		 -	Si no se encuentra, se informa al usuario que el usuario a expulsar no existe.
-*/
 void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userName, const std::string& channelName)
 {
     if (channels.find(channelName) != channels.end())
@@ -209,11 +197,6 @@ void CommandHandler::kickUserFromChannel(int client_fd, const std::string& userN
     }
 }
 
-/*	Comando /PRIVMSG.
-	1.-	Se obtiene el nombre del usuario o canal y el mensaje.
-	2.-	Si el nombre comienza por #, se envía el mensaje a todos los usuarios del canal.
-	3.-	Si el nombre no comienza por #, se envía el mensaje al usuario.
-*/
 void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdArgs)
 {
     size_t spacePosPriv = cmdArgs.find(' ');
@@ -256,6 +239,7 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
 				}
             }
         }
+        std::cout << "opcion con #\n";
     }
     else if (target[0] != '#')
     {
@@ -277,16 +261,10 @@ void CommandHandler::handlePrivMsgCommand(int client_fd, const std::string& cmdA
         {
             socket_manager.sendMessageToClient(client_fd, "Usuario o canal " + target + " no encontrado.\n");
         }
+        std::cout << "opcion sin #\n";
     }
 }
 
-/*	Comando /MODE.
-	1.-	Se obtiene el nombre del canal, el modo y el usuario objetivo.
-	2.-	Se comprueba si el canal existe.
-	3.-	Se comprueba si el usuario objetivo existe.
-	4.-	Si el modo es +o, se añade al usuario como operador del canal.
-	5.-	Si el modo es -o, se quita al usuario como operador del canal.
-*/
 void CommandHandler::handleModeCommand(int client_fd, const std::string& cmdArgs)
 {
     std::istringstream iss(cmdArgs);
@@ -353,13 +331,6 @@ void CommandHandler::handleModeCommand(int client_fd, const std::string& cmdArgs
     }
 }
 
-/*	Comando /INVITE.
-	1.-	Se obtiene el nombre del usuario y el nombre del canal.
-	2.-	Se comprueba si el canal existe.
-	3.-	Se comprueba si el cliente tiene permisos para invitar usuarios al canal.
-	4.-	Se busca el fd del usuario objetivo.
-	5.-	Si se encuentra, se añade al canal y se envía un mensaje al usuario invitado.
-*/
 void CommandHandler::handleInviteCommand(int client_fd, const std::string& cmdArgs)
 {
     size_t spacePos = cmdArgs.find(' ');
@@ -405,13 +376,6 @@ void CommandHandler::handleInviteCommand(int client_fd, const std::string& cmdAr
     socket_manager.sendMessageToClient(target_fd, "Has sido invitado al canal " + channelName + ".\n");
 }
 
-/*	Comando /TOPIC.
-	1.-	Se obtiene el nombre del canal y el nuevo tema.
-	2.-	Se comprueba si el canal existe.
-	3.-	Si no se especifica un nuevo tema, se muestra el actual.
-	4.-	Se comprueba si el cliente tiene permisos para cambiar el tema.
-	5.-	Se establece el nuevo tema y se envía un mensaje a todos los usuarios del canal.
-*/
 void CommandHandler::handleTopicCommand(int client_fd, const std::string& cmdArgs)
 {
     size_t spacePos = cmdArgs.find(' ');
@@ -451,12 +415,6 @@ void CommandHandler::handleTopicCommand(int client_fd, const std::string& cmdArg
     }
 }
 
-/*	Comando WHEREIS.
-	1.-	Se obtiene el nombre de usuario o apodo.
-	2.-	Se buscan los canales asociados al nombre de usuario y apodo.
-	3.-	Si no se encuentran canales, se informa al cliente.
-	4.-	Si se encuentran canales, se envía un mensaje al cliente con los nombres de los canales.
-*/
 void CommandHandler::handleWhereIsCommand(int client_fd, const std::string& cmdArgs)
 {
     if (cmdArgs.empty())
@@ -488,11 +446,6 @@ void CommandHandler::handleWhereIsCommand(int client_fd, const std::string& cmdA
     socket_manager.sendMessageToClient(client_fd, response);
 }
 
-/*	Comando WHEREAMI.
-	1.-	Se obtienen los canales del usuario.
-	2.-	Si no hay canales, se informa al cliente.
-	3.-	Si hay canales, se envía un mensaje al cliente con los nombres de los canales.
-*/
 void CommandHandler::handleWhereAmICommand(int client_fd, const std::string& cmdArgs)
 {
     (void)cmdArgs;
@@ -524,11 +477,6 @@ void CommandHandler::handleWhereAmICommand(int client_fd, const std::string& cmd
     socket_manager.sendMessageToClient(client_fd, response);
 }
 
-/*	Comando /ACTIVE.
-	1.-	Se obtiene el nombre del canal.
-	2.-	Se comprueba si el usuario está en el canal.
-	3.-	Se establece el canal activo y se envía un mensaje al usuario.
-*/
 void CommandHandler::handleActiveCommand(int client_fd, const std::string& cmdArgs)
 {
     if (cmdArgs.empty())
@@ -548,11 +496,6 @@ void CommandHandler::handleActiveCommand(int client_fd, const std::string& cmdAr
     socket_manager.sendMessageToClient(client_fd, "Canal activo cambiado a " + channelName + ".\n");
 }
 
-/*	Comando /HELP.
-	1.-	Se obtiene el nombre del canal.
-	2.-	Se comprueba si el usuario está en el canal.
-	3.-	Se establece el canal activo y se envía un mensaje al usuario.
-*/
 void CommandHandler::handleHelpCommand(int client_fd)
 {
     send(client_fd, "/PASS\t\t->\tintroduce el password\n", strlen("/PASS\t\t->\tintroduce el password\n"), 0);
